@@ -10,7 +10,14 @@ else
     run_flag = false;
 end
 
-fpath = [pathroot 'db/master id list.xlsx'];
+orig=pwd;
+%fpath = [pathroot 'db/master id list.xlsx'];
+fpath = 'L:/Summary Notes/Data/matlab/db/master id list.xlsx';
+
+if ~exist(fpath,'file')
+    error('No master list found, see help'); % Just in case
+end
+
 hardcopy = 'W:/SUICIDE2 Salem''s Copy.mdb';
 %Check original file's date
 org_file=dir(strcat(fpath));
@@ -27,15 +34,18 @@ if datenum(org_file)+.03<=datenum(db_file) || run_flag
     %Connect to database and export mast list
     h= actxserver('Access.Application');
     invoke(h,'OpenCurrentDatabase','W:\SUICIDE2 Salem''s Copy.mdb');
-    invoke(h.DoCmd,'RunMacro','exportMSList');
+    invoke(h.DoCmd,'RunMacro','exportMSList'); %REMBER to change macro file dest.
     h.Visible = 0;
     
     %Rename it
-    cd([pathroot 'db'])
+    cd('L:/Summary Notes/Data/matlab/db/')
+    movefile('master id list.xlsx','master id list_old_bckup.xlsx'); %Create backup
     movefile('master_id_list.xlsx','master id list.xlsx');
     disp('All DONE, press any key to continue!');
     pause();
 else
     disp('Database is up to date!');
-    
 end
+cd(orig);
+end
+

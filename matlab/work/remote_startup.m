@@ -37,6 +37,13 @@ addpath(genpath(fullfile(root, 'db')));
 addpath(genpath(fullfile(root, 'toolboxs')));
 addpath(fullfile(root, 'work'));
 
+%These will update the subjID.mat file used to get subj ID's
+if ~(ispc)
+    checkSubjList
+else
+    updateIDList
+    createSubjIDlist
+end
 
 % Change to working directory
 cd(root); clear all;

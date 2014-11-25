@@ -20,7 +20,8 @@ if(~ispc)
 end
 
 % read file (exported from M$ Access to *.xls file)
-fpath = [pathroot 'db/master id list.xlsx'];
+%fpath = [pathroot 'db/master id list.xlsx'];
+fpath = 'L:/Summary Notes/Data/matlab/db/master id list.xlsx';
 
 % import file
 [num,~,raw] = xlsread(fpath); % (below) set NaN's to empty char strings
@@ -107,8 +108,11 @@ subjectIDlistDB.comment = ...
 subjectIDlistDB.initials = ... 
     regexprep(regexprep(subjectIDlistDB.initials,'(\w)\.','$1'),' ','.');
 
+l_drive = 'L:/Summary Notes/Data/matlab/';
+
 % save file
-save([pathroot 'db/subjIDlistDB.mat'],'subjectIDlistDB');
+save([pathroot 'db/subjIDlistDB.mat'],'subjectIDlistDB'); %Save local copy
+save([l_drive 'db/subjIDlistDB.mat'],'subjectIDlistDB'); %Save remote copy
 
 return
 
