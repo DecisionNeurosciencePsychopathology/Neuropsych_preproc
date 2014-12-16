@@ -8,7 +8,8 @@ Just run remote_startup.m in matlab/work/ <- this will load all the needed paths
 2) You may need Psychtoolbox installed specifically the fx UniqueAndN. I did however just copy and paste the fx to programs/utils so I believe this should
 just take care of the need to install this toolbox. (I need to test this on another comp)
 
-3) some data files maybe required for scripts to opertate correctly (ie subjects' IDs)
+3) some data files maybe required for scripts to opertate correctly (ie subjects' IDs) so on the first run you should move the subjIDlist.mat 
+to the db folder in the main matlab dir.
 
 I believe it should be that simple but I'm probably overlooking some detail or didn't change some hard coded path somewhere.
 
