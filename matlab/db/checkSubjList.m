@@ -1,10 +1,10 @@
 function checkSubjList
 %Mac function to load in SubjIDListBD.mat 
-
+run_flag=0; %this is to force overwirte the subjIDlist
 orig=pwd;
 if ~ispc
     
-    l_drive = 'L:/Summary Notes/Data/matlab/'; %change for mac
+    l_drive = '/Volumes/llmd/Summary Notes/Data/matlab/'; %change for mac
     hardcopy = [l_drive 'db/subjIDlistDB.mat'];
     localcopy = [pathroot 'db/subjIDlistDB.mat'];
     
