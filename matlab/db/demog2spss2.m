@@ -35,23 +35,33 @@ origin = pwd;
 
 
 % set data path 
-cd(pathroot)
-cd ..
+%cd(pathroot)
+if(~isdeployed)
+    cd(fileparts(which(mfilename))); %if not in directory, move here
+end
+
+cd ../..
 data_dir = [pwd '/SPSS/data/'];
 
 %Update demog data
 update_flag = 0;
 
+
+
 if update_flag ==1
-    %Connect to database and export mast list
-    h= actxserver('Access.Application');
-    invoke(h,'OpenCurrentDatabase','Y:\Protect 2.0.accdb'); %Protect DB
-    invoke(h.DoCmd,'RunMacro','exportDemog'); %Macro is currently only executable on my (Jon's) computer
-    h.Visible = 0;
+%     %Connect to database and export mast list
+%     h= actxserver('Access.Application');
+%     
+%     %invoke(h,'OpenCurrentDatabase','Y:\Protect 2.0.accdb'); %Protect DB
+%     invoke(h,'OpenCurrentDatabase','Y:\Front End (For Copying)\Jon\Protect 2 - Front End (Jon).accdb'); %Protect DB
+%     %invoke(h.DoCmd,'RunMacro','exportDemog');
+%     invoke(h.DoCmd,'RunMacro','ExportDemographics'); %Macro is currently only executable on my (Jon's) computer
+%     h.Visible = 0;
+updateIDList
 end
 
 %Load data into matlab
-filename = [pathroot 'db/splash_demo_2.xlsx'];
+filename = [pathroot 'db/splashDemo2.xlsx'];
 [~,~,data] = xlsread(filename);
 
 %Strip header information

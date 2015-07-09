@@ -38,6 +38,10 @@ filename = [pathroot 'analysis/cantab/SummaryDatasheet DataRepos.xls'];
 
 % not sure why I'm separating this
 header_foo = raw_foo(1,:);
+%6/15/15 - was giving som funny error decided to remove Nans from header
+%first if applicable
+qnan = cellfun(@any,cellfun(@isnan,header_foo,'UniformOutput',0));
+header_foo(qnan) = {''}; % replace NaN's with zeros
 q_warnings = ~cellfun(@isempty,regexp(header_foo,'^Warning [0-9]{1,3}'));
 
 % first get rid of NaN entries

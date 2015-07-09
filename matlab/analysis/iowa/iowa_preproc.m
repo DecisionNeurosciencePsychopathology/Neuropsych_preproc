@@ -144,24 +144,24 @@ function data_struct = loadAndProc(data_struct)
 file_stem = [pathroot 'analysis/iowa/data/raw/'];
 
 for file_n = 1:length(data_struct.specs.filename)
-    
-    % read in file data
-    file_path = [file_stem data_struct.specs.filename{file_n}];
-    org_struct = organizeRawData(file_path);
-    
-    % some minor processing
-    if(length(org_struct.trial_n) == 100)
-        for n = 1:5 % total wins by blocks (5x20)
-            q = 1+(20*(n-1)):(20*n);
-            data_struct.blk_win_total(file_n,n) = sum(org_struct.trial_win(q));
-
-            choice_ratio = sum(org_struct.choice(q) > 2)/length(q);
-            data_struct.blk_prop1n2to3n4(file_n,n) = choice_ratio;
+    if(~isempty(data_struct.specs.filename{file_n}))
+        % read in file data
+        file_path = [file_stem data_struct.specs.filename{file_n}];
+        org_struct = organizeRawData(file_path);
+        
+        % some minor processing
+        if(length(org_struct.trial_n) == 100)
+            for n = 1:5 % total wins by blocks (5x20)
+                q = 1+(20*(n-1)):(20*n);
+                data_struct.blk_win_total(file_n,n) = sum(org_struct.trial_win(q));
+                
+                choice_ratio = sum(org_struct.choice(q) > 2)/length(q);
+                data_struct.blk_prop1n2to3n4(file_n,n) = choice_ratio;
+            end
+        else
+            fprintf(' >>> Incomplete file for %6d: SKIPPING <<< \n',data_struct.id(file_n));
         end
-    else
-        fprintf(' >>> Incomplete file for %6d: SKIPPING <<< \n',data_struct.id(file_n));
     end
-    
 end
 
 return

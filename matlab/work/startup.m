@@ -44,3 +44,7 @@ cd(root); clear all;
 format short g;
 dbstop if error;
 
+
+% Call Psychtoolbox-3 specific startup function:
+if exist('PsychStartup'), PsychStartup; end;
+

@@ -28,7 +28,6 @@ choice_top   = strcmp(b.showstim_RESP,'top')   | strcmp(b.showstim_RESP,'{UPARRO
 b.chosen_position = (choice_top + (2*choice_left) + (3*choice_right));
 
 
-
 %  --  get our design file  --  %
 % I'm pretty sure this is all in the E-prime output file as well,
 % it would be a good idea to update this in the future to just
@@ -48,6 +47,8 @@ b.achoice = ( b.chosen_position == aposition );
 b.bchoice = ( b.chosen_position == bposition );
 b.cchoice = ( b.chosen_position == cposition );
 b.stim_choice = char('A'*b.achoice + 'B'*b.bchoice + 'C'*b.cchoice); 
+%A=1 B=2 C=3
+b.stim_choice_numeric = (b.achoice + 2*b.bchoice + 3*b.cchoice);
 
 % calculate probability of reward based on last 10 trials of the
 % stimulus. the average is based only on trials in which a given

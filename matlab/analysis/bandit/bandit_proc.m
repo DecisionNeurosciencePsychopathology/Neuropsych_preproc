@@ -32,6 +32,7 @@ for sub=1:length(numlist)
     % ball.[a-c]choice were, but it is easity converted to such
 
 	ball.behav(sub).choice     = s.stim_choice;
+    ball.behav(sub).choice_numeric = s.stim_choice_numeric;
     if(eq(sub,1)) % only need to do this once
         % function handle converts ball.behav.choice from 'char' to 'int'
         ball.fx.choice_to_stimID = @(c) cast(c,'double')-64;
@@ -42,6 +43,9 @@ for sub=1:length(numlist)
     ball.behav(sub).errors.prob          = s.errors.prob_switch_err;
     ball.behav(sub).errors.perseverative = s.errors.perseverative;
     ball.behav(sub).errors.explore_sw    = s.errors.explore_switch;
+    
+    % save when subject responded correctly
+    ball.behav(sub).stim_ACC = s.showstim_ACC;
 
     % errors split into before and after reversal
     ball.behav(sub).errors.before = s.errors.before;
