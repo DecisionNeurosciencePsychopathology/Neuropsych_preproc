@@ -39,13 +39,13 @@ design_struct = bandit_tablet_load_design;
 
 %%
 trial_length = length(ball.behav(1,1).choice);
-v_t1=0.*ones(1,trial_length);
-v_t2=0.*ones(1,trial_length);
-v_t3=0.*ones(1,trial_length);
+vt_1=0.*ones(1,trial_length);
+vt_2=0.*ones(1,trial_length);
+vt_3=0.*ones(1,trial_length);
 
-v_t1(1)=0;
-v_t2(1)=0;
-v_t2(1)=0;
+vt_1(1)=0;
+vt_2(1)=0;
+vt_2(1)=0;
 
 Pr1=zeros(1,trial_length);
 Pr2=zeros(1,trial_length);
@@ -53,6 +53,8 @@ Pr3=zeros(1,trial_length);
 delta=zeros(1,trial_length);
 
 gamma = 0.99; % decay param for expected value when not chosen
+zeta = 0.99; %increment param for uncertainty
+epsilon = 0.3;
 
 %%
 %Grab subjects choices and run update equations
@@ -62,10 +64,25 @@ for i = 1:length(ball.id) %subject Loop
     choice_hist(:,i) = choice;
     r_hist(:,i) = r;
     best_choice = nan(1,trial_length)';
-    best_choice_value = zeros(1,trial_length)';
-    lose_switch = nan(1,trial_length)';
+    best_choice_empty = nan(1,trial_length)';
+    best_choice_value = nan(1,trial_length)';
+    best_choice_uvsum = nan(1,trial_length)';
+    lose_switch = zeros(1,trial_length)';
     subj_model_predicted = zeros(1,trial_length)';
+    
+    %Init uncertainty with init value as 0
+    ut_1 = zeros(1,trial_length)';
+    ut_2 = zeros(1,trial_length)';
+    ut_3 = zeros(1,trial_length)';
+    
+    
+    %Init uncertainty with init value as 0
+    uv_sum1 = zeros(1,trial_length)';
+    uv_sum2 = zeros(1,trial_length)';
+    uv_sum3 = zeros(1,trial_length)';
+    
     for j = 2:trial_length %Begin trial Loop
+        
         
         %Did I win?
         if r(j)>0
@@ -73,48 +90,56 @@ for i = 1:length(ball.id) %subject Loop
         else
             lambda = lambda_loss;
         end
-        %v_t(j) = alpha*v_t(j-1) + lambda*(r(j-1) - v_t(j-1));
+        %v_t(j) = alpha*v_t(j-1) + lambda*(r(j) - v_t(j-1));
         
         %Calculate expected value EV(t) = ALPHA*EV(t-1) + LAMBDA*DELTA
         if choice(j)==1
-            v_t1(j) = alpha*v_t1(j-1) + lambda*(r(j) - v_t1(j-1));
-            v_t2(j) = gamma.*v_t2(j-1);
-            v_t3(j) = gamma.*v_t3(j-1);
-            delta(j) = r(j) - v_t1(j-1);
+            %Calculate the value and uncertainties based on subj's choice
+            [vt_1, vt_2, vt_3, ut_1, ut_2, ut_3]=calc_ev_and_uv(vt_1,...
+                vt_2, vt_3, ut_1, ut_2, ut_3,delta,alpha,gamma,lambda,zeta,r,j);
         elseif choice(j) ==2
-            v_t2(j) = alpha*v_t2(j-1) + lambda*(r(j) - v_t2(j-1));
-            v_t1(j) = gamma.*v_t1(j-1);
-            v_t3(j) = gamma.*v_t3(j-1);
-            delta(j) = r(j) - v_t2(j-1);
+            [vt_2, vt_1, vt_3, ut_2, ut_1, ut_3]=calc_ev_and_uv(vt_2,...
+                vt_1, vt_3, ut_2, ut_1, ut_3,delta,alpha,gamma,lambda,zeta,r,j);
         elseif choice(j) ==3
-            v_t3(j) = alpha*v_t3(j-1) + lambda*(r(j) - v_t3(j-1));
-            v_t1(j) = gamma.*v_t1(j-1);
-            v_t2(j) = gamma.*v_t2(j-1);
-            delta(j) = r(j) - v_t3(j-1);
+            [vt_3, vt_1, vt_2, ut_3, ut_1, ut_2]=calc_ev_and_uv(vt_3,...
+                vt_1, vt_2, ut_3, ut_1, ut_2,delta,alpha,gamma,lambda,zeta,r,j);
         else
-            v_t1(j) = v_t1(j-1);
-            v_t2(j) = v_t2(j-1);
-            v_t3(j) = v_t3(j-1);
+            %values
+            vt_1(j) = vt_1(j-1);
+            vt_2(j) = vt_2(j-1);
+            vt_3(j) = vt_3(j-1);
+            %uncertainity
+            ut_1(j) = ut_1(j-1);
+            ut_2(j) = ut_2(j-1);
+            ut_3(j) = ut_3(j-1);
+            %PE
             delta(j) = 0;
         end
         
-        %% calculate probability of chosing a given stimulus
-        Pr1=exp(beta.*(v_t1))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));
-        Pr2=exp(beta.*(v_t2))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));
-        Pr3=exp(beta.*(v_t3))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));
+        %% calculate the uvSums
+        uv_sum1(j) = (1-epsilon)*vt_1(j) + epsilon*ut_1(j);
+        uv_sum2(j) = (1-epsilon)*vt_2(j) + epsilon*ut_2(j);
+        uv_sum3(j) = (1-epsilon)*vt_3(j) + epsilon*ut_3(j);
         
+        %% calculate probability of chosing a given stimulus
+        Pr1=exp(beta.*(vt_1))./(exp(beta.*(vt_1))+exp(beta.*(vt_2))+ exp(beta.*(vt_3)));
+        Pr2=exp(beta.*(vt_2))./(exp(beta.*(vt_1))+exp(beta.*(vt_2))+ exp(beta.*(vt_3)));
+        Pr3=exp(beta.*(vt_3))./(exp(beta.*(vt_1))+exp(beta.*(vt_2))+ exp(beta.*(vt_3)));
         
         %determine probablistically best choice
-        best_choice(Pr1> Pr2 & Pr1> Pr3)=1;
-        best_choice(Pr2> Pr1 & Pr2> Pr3)=2;
-        best_choice(Pr3> Pr2 & Pr3> Pr1)=3;
+        best_choice_Pr = find_best_choice(best_choice_empty,Pr1,Pr2,Pr3,1);
         
-        %determine value based best choice
-        best_choice_value(v_t1> v_t2 & v_t1> v_t3 & v_t1> 0.5)=1;
-        best_choice_value(v_t2> v_t1 & v_t2> v_t3 & v_t2> 0.5)=2;
-        best_choice_value(v_t3> v_t2 & v_t3> v_t1 & v_t3> 0.5)=3;
+        %determine value based best choice with 0.x cutoff
+        best_choice_value = find_best_choice(best_choice_empty,vt_1, vt_2, vt_3,1);
         
-        %Grab choices so they are easier to reads
+        %determine UVsum based best choice
+        best_choice_uvsum = find_best_choice(best_choice_empty, uv_sum1, uv_sum2, uv_sum3,1);
+                
+        %Temporary best choice until I add if statement or switch later
+        best_choice = best_choice_uvsum;
+        
+        
+        %Grab choices so they are easier to read
         current_choice = choice(j);
         prev_choice = choice(j-1);
         
@@ -122,8 +147,8 @@ for i = 1:length(ball.id) %subject Loop
         %(according to the model) and the on the subsequent trial the subject
         %recieved an error again, r(t)=0, and switched their choice, while the
         %previous best choice was still the same, we have a lose switch error.
-        if r(j-1)==0 && prev_choice == best_choice_value(j-1);
-            if current_choice ~= prev_choice && best_choice_value(j) == best_choice_value(j-1) %&& best_choice_value(j)>0
+        if r(j-1)==0 && prev_choice == best_choice(j-1);
+            if current_choice ~= prev_choice && best_choice(j) == best_choice(j-1) %&& best_choice_value(j)>0
                 lose_switch(j) = 1;
             end
         end
@@ -131,20 +156,56 @@ for i = 1:length(ball.id) %subject Loop
         
     end %End trial Loop
     
-
+    %     scaled_uv_sum1 = (uv_sum1-min(uv_sum1(:))) ./ (max(uv_sum1(:)-min(uv_sum1(:))));
+    %     scaled_uv_sum2 = (uv_sum2-min(uv_sum2(:))) ./ (max(uv_sum2(:)-min(uv_sum2(:))));
+    %     scaled_uv_sum3 = (uv_sum3-min(uv_sum3(:))) ./ (max(uv_sum3(:)-min(uv_sum3(:))));
     
+    tmp = uv_sum1-min(uv_sum1);
+    norm_uv_sum1 = tmp/norm(tmp,1);
     
+    tmp = uv_sum2-min(uv_sum2);
+    norm_uv_sum2 = tmp/norm(tmp,1);
+    
+    tmp = uv_sum3-min(uv_sum3);
+    norm_uv_sum3 = tmp/norm(tmp,1);
+    
+    uv_sum = [uv_sum1 uv_sum2 uv_sum3];
+    
+    if plot_flag==1
+        %plot uv_sums
+        figure(99)
+        clf
+        plot(uv_sum1)
+        %plot(scaled_uv_sum1)
+        %plot(norm_uv_sum1)
+        hold on
+        plot(uv_sum2, 'r')
+        %plot(scaled_uv_sum2, 'r')
+        %plot(norm_uv_sum2, 'r')
+        hold on
+        plot(uv_sum3, 'g')
+        %plot(scaled_uv_sum3, 'g')
+        %plot(norm_uv_sum3, 'g')
+        hold off
+        
+        %plot u's
+        figure(199)
+        clf
+        plot(ut_1)
+        hold on
+        plot(ut_2, 'r')
+        hold on
+        plot(ut_3, 'g')
+        hold off
+    end
     
     %Pr1=exp(beta.*(v_t1))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));
     %Pr2=exp(beta.*(v_t2))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));
     %Pr3=exp(beta.*(v_t3))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));
-    
-    %determine probablistically best choice
-    %     best_choice = nan(1,trial_length)';
-    %     best_choice(Pr1> Pr2 & Pr1> Pr3)=1;
-    %     best_choice(Pr2> Pr1 & Pr2> Pr3)=2;
-    %     best_choice(Pr3> Pr2 & Pr3> Pr1)=3;
-    
+        
+    %Best choice based on model probabilities, value, or uvSum compared to
+    %subjects choices
+    %subj_model_predicted = (best_choice_value==choice);    
     subj_model_predicted = (best_choice==choice);    
     
     %% calculate expected value for CHOSEN stimulus (not for model fitting)
@@ -152,12 +213,12 @@ for i = 1:length(ball.id) %subject Loop
     chose1=(choice==1);
     chose2=(choice==2);
     chose3=(choice==3);
-    echosen=[v_t1.*chose1'+v_t2.*chose2'+v_t3.*chose3']';
-    etotal=v_t1+v_t2+v_t3;
+    echosen=[vt_1.*chose1'+vt_2.*chose2'+vt_3.*chose3']';
+    etotal=vt_1+vt_2+vt_3;
     
     
     %% Save each meteric in subject's behavorial struct
-    ball.behav(1,i).v_t = [v_t1' v_t2' v_t3'];
+    ball.behav(1,i).v_t = [vt_1' vt_2' vt_3'];
     ball.behav(1,i).delta = delta';
     ball.behav(1,i).Prs = [Pr1' Pr2' Pr3'];
     ball.behav(1,i).lose_switch = lose_switch;
@@ -182,21 +243,24 @@ for i = 1:length(ball.id) %subject Loop
         plot(smooth(design_struct.Arew,smoothie), 'r--','LineWidth',2);
         hold on
         plot(smooth(chose1,smoothie), 'b', 'LineWidth',2);
-        plot(smooth(v_t1,smoothie), 'k','LineWidth',2);
+        plot(smooth(vt_1,smoothie), 'k','LineWidth',2);
+        plot(smooth((best_choice==1),smoothie), 'g','LineWidth',2);
         axis([0 300 0 1.1])
         title(['Arew vs EV A ' num2str(ball.id(i))]);
         subplot(3,1,2)
         plot(smooth(design_struct.Brew,smoothie), 'r--','LineWidth',2);
         hold on
         plot(smooth(chose2,smoothie), 'b', 'LineWidth',2);
-        plot(smooth(v_t2,smoothie), 'k','LineWidth',2);
+        plot(smooth(vt_2,smoothie), 'k','LineWidth',2);
+        plot(smooth((best_choice==2),smoothie), 'g','LineWidth',2);
         axis([0 300 0 1.1])
         title('Brew vs EV B');
         subplot(3,1,3)
         plot(smooth(design_struct.Crew,smoothie), 'r--','LineWidth',2);
         hold on
         plot(smooth(chose3,smoothie), 'b', 'LineWidth',2);
-        plot(smooth(v_t3,smoothie), 'k','LineWidth',2);
+        plot(smooth(vt_3,smoothie), 'k','LineWidth',2);
+        plot(smooth((best_choice==3),smoothie), 'g','LineWidth',2);
         axis([0 300 0 1.1])
         title('Crew vs EV C');
         
@@ -204,67 +268,62 @@ for i = 1:length(ball.id) %subject Loop
         
     end
     
-    v_t1=0.*ones(1,trial_length);
-    v_t2=0.*ones(1,trial_length);
-    v_t3=0.*ones(1,trial_length);
+    
+    vt_1=0.*ones(1,trial_length);
+    vt_2=0.*ones(1,trial_length);
+    vt_3=0.*ones(1,trial_length);
     
 end %end Subject Loop
 tmp=0;
 
-%% get the reward on each trial.
-% r=s.feed;% 1=win, 0=loose
-%
-% for ct=1:length(s.choice)-1
-%     %% Calculate the reward/punishment expectancies associated with each stimulus
-%     %% On rewarded trials, apply the learning rate for rewards
-%     if s.feed(ct)>0
-%         if s.choice(ct)==1
-%             e1(ct+1)=e1(ct)+ AlphaWin.*(r(ct)-e1(ct));
-%             e2(ct+1)=LossDecay.*e2(ct);%-(e1(ct)-e1(ct-1))/2;
-%             e3(ct+1)=LossDecay.*e3(ct);%-(e1(ct)-e1(ct-1))/2;
+
+function best_choice=find_best_choice(best_choice,x,y,z,gr)
+if gr>0
+    best_choice(x> y & x> z)=1;
+    best_choice(y> x & y> z)=2;
+    best_choice(z> y & z> x)=3;
+else
+    best_choice(x< y & x< z)=1;
+    best_choice(y< x & y< z)=2;
+    best_choice(z< y & z< x)=3;
+end
+return
+
+function [a,b,c,x,y,z,dlt]=calc_ev_and_uv(a,b,c,x,y,z,dlt,al,gam,lmb,zta,r,j)
+%Value
+a(j) = al*a(j-1) + lmb*(r(j) - a(j-1));
+b(j) = gam.*b(j-1);
+c(j) = gam.*c(j-1);
+%Uncertainty
+x(j) = gam*(x(j-1)) - (1+x(j-1));
+y(j) = zta*(y(j-1));
+z(j) = zta*(z(j-1));
+%PE
+dlt(j) = r(j) - a(j-1);
+return
+
+%% Old code:
+%       Old code might be useful if we nede to tweak anything later
+%determine probablistically best choice
+%         best_choice(Pr1> Pr2 & Pr1> Pr3)=1;
+%         best_choice(Pr2> Pr1 & Pr2> Pr3)=2;
+%         best_choice(Pr3> Pr2 & Pr3> Pr1)=3;
+        
+        %determine value based best choice with 0.x cutoff 
+        %best_choice_value(vt_1> vt_2 & vt_1> vt_3 & vt_1> 0.5)=1;
+%         best_choice_value(vt_1> vt_2 & vt_1> vt_3)=1;
+%         best_choice_value(vt_2> vt_1 & vt_2> vt_3)=2;
+%         best_choice_value(vt_3> vt_2 & vt_3> vt_1)=3;
+        
+        %determine UVsum based best choice
+%         best_choice_uvsum(uv_sum1< uv_sum2 & uv_sum1< uv_sum3)=1;
+%         best_choice_uvsum(uv_sum2< uv_sum1 & uv_sum2< uv_sum3)=2;
+%         best_choice_uvsum(uv_sum3< uv_sum2 & uv_sum3< uv_sum1)=3;
+
+%             v1(ct)=AL*v1(ct)+ AlphaWin.*(r(ct)-v1(ct-1));
+%             v2(ct)=LossDecay.*v2(ct);
+%             v3(ct)=LossDecay.*v3(ct);
 %             delta(ct)=r(ct)-e1(ct);
-%         elseif s.choice(ct)==2
-%             e2(ct+1)=e2(ct)+ AlphaWin.*(r(ct)-e2(ct));
-%             e1(ct+1)=LossDecay.*e1(ct);%-(e2(ct)-e2(ct))/2;
-%             e3(ct+1)=LossDecay.*e3(ct);%-(e2(ct)-e2(ct))/2;
-%             delta(ct)=r(ct)-e2(ct);
-%         elseif s.choice(ct)==3
-%             e3(ct+1)=e3(ct)+ AlphaWin.*(r(ct)-e3(ct));
-%             e1(ct+1)=LossDecay.*e1(ct);%-(e3(ct)-e3(ct))/2;
-%             e2(ct+1)=LossDecay.*e2(ct);%-(e3(ct)-e3(ct))/2;
-%             delta(ct)=r(ct)-e3(ct);
-%         elseif s.choice(ct)==999 %meaning a no-response trial
-%             e1(ct+1)=e1(ct);
-%             e2(ct+1)=e2(ct);
-%             e3(ct+1)=e3(ct);
-%             delta(ct)=0;
-%         end
-%         %% On punished trials, apply the learning rate for punishments
-%
-%     elseif s.feed(ct)==0
-%         if s.choice(ct)==1
-%             e1(ct+1)=e1(ct)+ AlphaLoss.*(r(ct)-e1(ct));
-%             e2(ct+1)=WinDecay.*e2(ct);%+(e1(ct)-e1(ct))/2;
-%             e3(ct+1)=WinDecay.*e3(ct);%+(e1(ct)-e1(ct))/2;
-%             delta(ct)=r(ct)-e1(ct);
-%         elseif s.choice(ct)==2
-%             e2(ct+1)=e2(ct)+ AlphaLoss.*(r(ct)-e2(ct));
-%             e1(ct+1)=WinDecay.*e1(ct);%+(e2(ct)-e2(ct))/2;
-%             e3(ct+1)=WinDecay.*e3(ct);%+(e2(ct)-e2(ct))/2;
-%             delta(ct)=r(ct)-e2(ct);
-%         elseif s.choice(ct)==3
-%             e3(ct+1)=e3(ct)+ AlphaLoss.*(r(ct)-e3(ct));
-%             e1(ct+1)=WinDecay.*e1(ct);%+(e3(ct)-e3(ct))/2;
-%             e2(ct+1)=WinDecay.*e2(ct);%+(e3(ct)-e3(ct-2))/2;
-%             delta(ct)=r(ct)-e3(ct);
-%         elseif s.choice(ct)==999 %meaning a no-response trial
-%             e1(ct+1)=e1(ct);
-%             e2(ct+1)=e2(ct);
-%             e3(ct+1)=e3(ct);
-%             delta(ct)=0;
-%         end
-%     end
-%
 %
 %
 %

@@ -28,6 +28,8 @@ ball = find_demog_by_id(ball);
 %Run model to get EV and other metrics
 ball = bandit_rl_model(ball,1,0);
 
+ball = credit_assignment(ball); %takes about 22 seconds to run demog + rlmodel + credit assignment
+
 %Decide which group to investigate 1 = 1-5 2 = 1-7
 group_type = 2;
 group_num = ball.group_17;
@@ -63,13 +65,29 @@ for i = 1:length(ball.id)
     win_switch_error_postreversal(i,1) = sum(ball.behav(1,i).errors.after.spont_switch_err)/trial_length;
     %Add this to the errors sub group later--possibly
     lose_switch_error(i,1) = sum(ball.behav(1,i).lose_switch);
+    
+    %Credit assignment - Backward spread
+    diffAgivena1x(i,1) = ball.behav(1,i).back_output.diffAgivena1x;
+    diffAgivena23x(i,1) = ball.behav(1,i).back_output.diffAgivena23x;
+    diffAgivena4plusx(i,1) = ball.behav(1,i).back_output.diffAgivena4plusx;
+    
+    %Credit assignment - Forward spread
+    diffAgiven_n_5(i,1) = ball.behav(1,i).for_output.diffAgiven_n_5;
+    diffAgiven_n_4(i,1) = ball.behav(1,i).for_output.diffAgiven_n_4;
+    diffAgiven_n_3(i,1) = ball.behav(1,i).for_output.diffAgiven_n_3;
+    diffAgiven_n_2(i,1) = ball.behav(1,i).for_output.diffAgiven_n_2;
+    
 end
 
+%%NOTE START HERE MONDAY ADD DIFFERENCES TO THE BADNIT STRUCT MAY HAVE TO
+%%CLEAN UP NANS THOUGH BRAH!!!
 
 %Temporary data matrix
 bandit_stats = [ball.id group_num percent_correct percent_correct_prereversal ...
     percent_correct_postreversal win_switch_error ...
-    win_switch_error_prereversal win_switch_error_postreversal lose_switch_error];
+    win_switch_error_prereversal win_switch_error_postreversal lose_switch_error...
+    diffAgivena1x diffAgivena23x diffAgivena4plusx diffAgiven_n_5...
+    diffAgiven_n_4 diffAgiven_n_3 diffAgiven_n_2];
 str=sprintf('\nOverall percent correct is: %.2f\n', mean(percent_correct)*100);
 disp(str)
 str = sprintf('Overall percent by group is..\n');
@@ -100,11 +118,20 @@ for i = 1:length(group_names)
     
     %Long block of code to calc means and std....
     
-    %Individual means
+    %Individual means and values
     group_struct.(group_names{i}).metrics.individual_means = bandit_stats(idx,3);
     group_struct.(group_names{i}).metrics.individual_means_pre = bandit_stats(idx,4);
     group_struct.(group_names{i}).metrics.individual_means_post = bandit_stats(idx,5);
     group_struct.(group_names{i}).metrics.individual_lose_switch_means = bandit_stats(idx,9);
+    
+    %Credit assignment
+    group_struct.(group_names{i}).metrics.individual_diffAgivena1x = bandit_stats(idx,10);
+    group_struct.(group_names{i}).metrics.individual_diffAgivena23x = bandit_stats(idx,11);
+    group_struct.(group_names{i}).metrics.individual_diffAgivena4plusx = bandit_stats(idx,12);
+    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_5 = bandit_stats(idx,13);
+    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_4 = bandit_stats(idx,14);
+    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_3 = bandit_stats(idx,15);
+    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_2 = bandit_stats(idx,15);
     
     %Overall means by group
     group_struct.(group_names{i}).metrics.percent_correct_mean = mean(bandit_stats(idx,3));
@@ -160,6 +187,9 @@ for i = 1:length(group_names)
     
     %Learning curves
     plot_learning_curves(design_struct,group_struct,group_names,i)
+    
+    %Credit assignment
+    plot_credit_assignment(group_struct,group_names,i)
     
     figure(i+10)
     clf;
@@ -237,6 +267,24 @@ hold on
 plot(smooth(choice_struct.(group_names{i}).average_choiceC,smoothie),'LineWidth',2)
 axis([0 300 0 1.1])
 title('Crew');
+
+function plot_credit_assignment(group_data,group_names, index)
+i = index;
+figure(i*100)
+clf;
+labels1={'Ax1B' 'Ax23B' 'Ax4plusB'};
+labels2={'A?AAAB' 'AA?AAB' 'AAA?AB' 'AAAA?B'};
+subplot(2,1,1)
+boxplot([group_data.(group_names{i}).metrics.individual_diffAgivena1x,...
+    group_data.(group_names{i}).metrics.individual_diffAgivena23x,...
+    group_data.(group_names{i}).metrics.individual_diffAgivena4plusx],'labels',labels1)
+title(['Credit Assignment for: ' (group_names{i})]);
+subplot(2,1,2)
+boxplot([group_data.(group_names{i}).metrics.individual_diffAgiven_n_5,...
+    group_data.(group_names{i}).metrics.individual_diffAgiven_n_4,...
+    group_data.(group_names{i}).metrics.individual_diffAgiven_n_3,...
+    group_data.(group_names{i}).metrics.individual_diffAgiven_n_2],'labels',labels2)
+
 
 
 
