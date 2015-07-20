@@ -17,7 +17,7 @@ cn.Connection.CommandTimeout=60;
 cn.RecordsetType=1;
 
 % Limit rows returned to 20,000
-sql=strcat('select top 200000 * from', TableName);
+sql=strcat('select top 20000 * from', TableName);
 r = cn.connection.invoke('execute', sql);
 
 if r.state && r.recordcount>0

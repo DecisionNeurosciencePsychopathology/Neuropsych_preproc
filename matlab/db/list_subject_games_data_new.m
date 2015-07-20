@@ -173,7 +173,7 @@ for ni = 1:numel(data.id)
    %MAKE trust game preproc then come back here...
    if(data.trustgame(ni))
        ind=find(tg_struct.id==id_num);
-        if strcmp(tg_struct.versn(ind),'scanner/laptop') && strcmp(tg_struct.versn(ind),'laptop/scanner')
+        if strcmp(tg_struct.versn(ind),'scanner/laptop') || strcmp(tg_struct.versn(ind),'laptop/scanner')
             s.trust = sprintf('\\hspace{3.3mm} \\checkmark & \\checkmark');
         elseif strcmp(tg_struct.versn(ind),'laptop')
             s.trust = sprintf('\\hspace{3mm} \\checkmark &');

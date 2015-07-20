@@ -142,6 +142,12 @@ file_stem = [pathroot 'analysis/willingness to wait/data/raw/'];
 
 for file_n = 1:length(data_struct)
     
+    %Hopefully this will fix any more issues with load, skip over any empty
+    %ids in struct
+    if isempty(data_struct(file_n).id)
+        continue
+    end
+    
     % read in file data
     file_path = [file_stem data_struct(file_n).specs.filename];
     

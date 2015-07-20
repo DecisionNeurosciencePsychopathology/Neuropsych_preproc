@@ -20,6 +20,12 @@ s = mostRecentDir(default_bkup_dir);
 d = [pathroot 'analysis/' name_of_the_game '/data/raw'];
 
 % get info/names of text data files
+%I suggest rethinking this sometimes it automaticcaly picks bandit or
+%ultimatum other times it just grabs the most recent directory
+%Perhaps this would be a good exersice to use unix commands to find bandit
+%or ultimatum or wtw in the most recent directory in the processed folder
+%and then move all the data files?
+
 %file_list = dir([s name_of_the_game '/*.txt']); % for E-Prime files
 file_list = dir([s '/*.txt']); % for E-Prime files
 if(isempty(file_list)) 
