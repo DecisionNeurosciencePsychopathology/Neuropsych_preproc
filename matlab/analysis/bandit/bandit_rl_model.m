@@ -3,21 +3,23 @@ function ball=bandit_rl_model(ball,params,plt)
 %of parameters alpha lambda(win,loss) and inverse temperature constant Beta
 
 %Take care of initial params
-if  numel(params) < 4
+if  numel(params) < 5
     disp('Not enough parameters defaulting to generic values')
     alpha = 0.9;
     lambda_win = 0.3;
     lambda_loss = 0.1;
     beta = 10;
+    epsilon = 0.3;
 else
     alpha = params(1);
     lambda_win = params(2);
     lambda_loss = params(3);
     beta = params(4);
+    epsilon = params(5);
 end
 
-str =sprintf('Parameters values Alpha = %.2f, Lambda Win = %.2f, Lambda Loss = %.2f, Beta = %.2f',...
-    alpha, lambda_win, lambda_loss, beta);
+str =sprintf('Parameters values Alpha = %.2f, Lambda Win = %.2f, Lambda Loss = %.2f, Beta = %.2f, Epsilon = %.2f',...
+    alpha, lambda_win, lambda_loss, beta, epsilon);
 disp(str);
 
 %To plot or not to plot
@@ -54,7 +56,7 @@ delta=zeros(1,trial_length);
 
 gamma = 0.99; % decay param for expected value when not chosen
 zeta = 0.99; %increment param for uncertainty
-epsilon = 0.3;
+
 
 %%
 %Grab subjects choices and run update equations
@@ -171,6 +173,8 @@ for i = 1:length(ball.id) %subject Loop
     
     uv_sum = [uv_sum1 uv_sum2 uv_sum3];
     
+ 
+    
     if plot_flag==1
         %plot uv_sums
         figure(99)
@@ -187,6 +191,9 @@ for i = 1:length(ball.id) %subject Loop
         %plot(scaled_uv_sum3, 'g')
         %plot(norm_uv_sum3, 'g')
         hold off
+          legend('stim-1', 'stim-2', 'stim-3',...
+        'Location','Best');
+        title('UV sums')
         
         %plot u's
         figure(199)
@@ -197,6 +204,9 @@ for i = 1:length(ball.id) %subject Loop
         hold on
         plot(ut_3, 'g')
         hold off
+          legend('stim-1', 'stim-2', 'stim-3',...
+        'Location','Best');
+        title('Uncertainties')
     end
     
     %Pr1=exp(beta.*(v_t1))./(exp(beta.*(v_t1))+exp(beta.*(v_t2))+ exp(beta.*(v_t3)));

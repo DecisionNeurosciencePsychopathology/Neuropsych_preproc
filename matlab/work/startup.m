@@ -36,7 +36,8 @@ addpath(genpath(fullfile(root, 'programs')));
 addpath(genpath(fullfile(root, 'db')));
 addpath(genpath(fullfile(root, 'toolboxs')));
 addpath(fullfile(root, 'work'));
-
+%added this path so I didn't have to set path every time for MBCOG game
+addpath(fullfile(root, 'toolboxs\Psychtoolbox\PsychBasic\MatlabWindowsFilesR2007a'));
 
 % Change to working directory
 cd(root); clear all;
@@ -47,4 +48,5 @@ dbstop if error;
 
 % Call Psychtoolbox-3 specific startup function:
 if exist('PsychStartup'), PsychStartup; end;
+
 
