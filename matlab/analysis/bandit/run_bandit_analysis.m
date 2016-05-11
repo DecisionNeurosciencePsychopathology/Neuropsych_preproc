@@ -67,33 +67,45 @@ for i = 1:length(ball.id)
     lose_switch_error(i,1) = sum(ball.behav(1,i).lose_switch);
     
     %Credit assignment - Backward spread
-    diffAgivena1x(i,1) = ball.behav(1,i).back_output.diffAgivena1x;
-    diffAgivena23x(i,1) = ball.behav(1,i).back_output.diffAgivena23x;
-    diffAgivena4plusx(i,1) = ball.behav(1,i).back_output.diffAgivena4plusx;
+    Ax1B(i,1) = ball.behav(1,i).back_output.diffAgivena1x;
+    Ax23B(i,1) = ball.behav(1,i).back_output.diffAgivena23x;
+    Ax47B(i,1) = ball.behav(1,i).back_output.diffAgivena4plusx;
     
     %Credit assignment - Forward spread
-    diffAgiven_n_5(i,1) = ball.behav(1,i).for_output.diffAgiven_n_5;
-    diffAgiven_n_4(i,1) = ball.behav(1,i).for_output.diffAgiven_n_4;
-    diffAgiven_n_3(i,1) = ball.behav(1,i).for_output.diffAgiven_n_3;
-    diffAgiven_n_2(i,1) = ball.behav(1,i).for_output.diffAgiven_n_2;
+    ARAAAB(i,1) = ball.behav(1,i).for_output.diffAgiven_n_5;
+    AARAAB(i,1) = ball.behav(1,i).for_output.diffAgiven_n_4;
+    AAARAB(i,1) = ball.behav(1,i).for_output.diffAgiven_n_3;
+    AAAARB(i,1) = ball.behav(1,i).for_output.diffAgiven_n_2;
+    
+    %Correct choices based on stimulus probability
+    correct_choice(i,1) = ball.behav(1,i).correct_choice;
+    correct_choice_prereversal(i,1) = ball.behav(1,i).correct_choice_prereversal;
+    correct_choice_postreversal(i,1) = ball.behav(1,i).correct_choice_postreversal;
+    
     
 end
-
-%%NOTE START HERE MONDAY ADD DIFFERENCES TO THE BADNIT STRUCT MAY HAVE TO
-%%CLEAN UP NANS THOUGH BRAH!!!
 
 %Temporary data matrix
 bandit_stats = [ball.id group_num percent_correct percent_correct_prereversal ...
     percent_correct_postreversal win_switch_error ...
     win_switch_error_prereversal win_switch_error_postreversal lose_switch_error...
-    diffAgivena1x diffAgivena23x diffAgivena4plusx diffAgiven_n_5...
-    diffAgiven_n_4 diffAgiven_n_3 diffAgiven_n_2];
+    Ax1B Ax23B Ax47B ARAAAB...
+    AARAAB AAARAB AAAARB correct_choice correct_choice_prereversal correct_choice_postreversal];
+
+%Names of all variables in the bandit stats matrix
+bandit_stats_names = {'id' 'group number' 'percent_correct' 'percent_correct_prereversal'...
+    'precent_correct_postreversal' 'win_switch_error' 'win_switch_error_prereversal'...
+    'win_switch_error_postreversal' 'lose_switch_error' 'Ax1B' 'Ax23B' 'Ax47B'...
+    'ARAAAB' 'AARAAB' 'AAARAB' 'AAAARB' 'correct_choice' 'correct_choice_prereversal'...
+    'correct_choice_postreversal'};
+
+%Print out some data...think you could just use fprintf?
 str=sprintf('\nOverall percent correct is: %.2f\n', mean(percent_correct)*100);
 disp(str)
 str = sprintf('Overall percent by group is..\n');
 disp(str)
 
-%Plot lose switches Overall
+%Plot lose switches Overall for all subjects
 figure(88)
 clf
 hist(bandit_stats(:,9))
@@ -116,50 +128,25 @@ for i = 1:length(group_names)
     end
     num_in_group = sum(idx);
     
-    %Long block of code to calc means and std....
+    %For loop to set individual group data in struct as well as calculate
+    %mean and std of said variable in question (i.e percent_correct, 
+    %lose_switch_error, ect almost all strings in bandit stats names.
     
-    %Individual means and values
-    group_struct.(group_names{i}).metrics.individual_means = bandit_stats(idx,3);
-    group_struct.(group_names{i}).metrics.individual_means_pre = bandit_stats(idx,4);
-    group_struct.(group_names{i}).metrics.individual_means_post = bandit_stats(idx,5);
-    group_struct.(group_names{i}).metrics.individual_lose_switch_means = bandit_stats(idx,9);
-    
-    %Credit assignment
-    group_struct.(group_names{i}).metrics.individual_diffAgivena1x = bandit_stats(idx,10);
-    group_struct.(group_names{i}).metrics.individual_diffAgivena23x = bandit_stats(idx,11);
-    group_struct.(group_names{i}).metrics.individual_diffAgivena4plusx = bandit_stats(idx,12);
-    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_5 = bandit_stats(idx,13);
-    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_4 = bandit_stats(idx,14);
-    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_3 = bandit_stats(idx,15);
-    group_struct.(group_names{i}).metrics.individual_diffAgiven_n_2 = bandit_stats(idx,15);
-    
-    %Overall means by group
-    group_struct.(group_names{i}).metrics.percent_correct_mean = mean(bandit_stats(idx,3));
-    group_struct.(group_names{i}).metrics.percent_correct_std = std(bandit_stats(idx,3));
-    group_struct.(group_names{i}).metrics.percent_correct_mean_pre = mean(bandit_stats(idx,4));
-    group_struct.(group_names{i}).metrics.percent_correct_std_pre = std(bandit_stats(idx,4));
-    group_struct.(group_names{i}).metrics.percent_correct_mean_post = mean(bandit_stats(idx,5));
-    group_struct.(group_names{i}).metrics.percent_correct_std_post = std(bandit_stats(idx,5));
-    
-    %Individual Errors
-    group_struct.(group_names{i}).metrics.individual_win_switch_error = bandit_stats(idx,6);
-    group_struct.(group_names{i}).metrics.individual_win_switch_error_pre = bandit_stats(idx,7);
-    group_struct.(group_names{i}).metrics.individual_win_switch_error_post = bandit_stats(idx,8);
-    
-    %Overall Errors by group
-    group_struct.(group_names{i}).metrics.win_switch_mean = mean(bandit_stats(idx,6));
-    group_struct.(group_names{i}).metrics.win_switch_std = std(bandit_stats(idx,6));
-    group_struct.(group_names{i}).metrics.win_switch_mean_pre = mean(bandit_stats(idx,7));
-    group_struct.(group_names{i}).metrics.win_switch_pre_std = std(bandit_stats(idx,7));
-    group_struct.(group_names{i}).metrics.win_switch_mean_post = mean(bandit_stats(idx,8));
-    group_struct.(group_names{i}).metrics.win_switch_post_std = std(bandit_stats(idx,8));
-    
-    %Lose switches by group
-    group_struct.(group_names{i}).metrics.lose_switch_mean = mean((bandit_stats(idx,9)));
+    for j = 3:length(bandit_stats_names)
+        %group_struct.(group_names{i}).metrics.([bandit_stats_names{j}]) = bandit_stats(idx,j);
+        %group_struct.(group_names{i}).metrics.([bandit_stats_names{j} '_mean']) = mean(bandit_stats(idx,j));
+        %group_struct.(group_names{i}).metrics.([bandit_stats_names{j} '_std']) = std(bandit_stats(idx,j));
+        
+        %How to handle Nans?
+        temp = bandit_stats(idx,j);
+        group_struct.(group_names{i}).metrics.(['individual_' bandit_stats_names{j}]) = temp;
+        group_struct.(group_names{i}).metrics.([bandit_stats_names{j} '_mean'])=mean(temp(~isnan(temp)));
+        group_struct.(group_names{i}).metrics.([bandit_stats_names{j} '_std'])=std(temp(~isnan(temp)));
+    end
     
     
     %Print out some statistics
-    str=sprintf('%s with mean %.2f and std %.2f',group_names{i},...
+    str=sprintf('%s with mean %.2f%% correct with std %.2f',group_names{i},...
         group_struct.(group_names{i}).metrics.percent_correct_mean*100, ...
         group_struct.(group_names{i}).metrics.percent_correct_std);
     disp(str)
@@ -191,12 +178,21 @@ for i = 1:length(group_names)
     %Credit assignment
     plot_credit_assignment(group_struct,group_names,i)
     
-    figure(i+10)
-    clf;
+    %Histograms for lose switches
+    figure(42)
+    subplot(2,3,i)
     hist(bandit_stats(idx,9))
     title(['Lose switches per group ' (group_names{i})])
     
-    
+    %Plot histograms for credit assignments
+    credit_index=find(~cellfun('isempty', strfind(bandit_stats_names,'A')));
+    for k = 1:length(credit_index)
+        cred_idx = credit_index(k);
+        figure(i*1000)
+        subplot(3,3,k)
+        hist(bandit_stats(idx,cred_idx))
+        title(['Credit assignment hist for ' (group_names{i}) ' ' bandit_stats_names{cred_idx}])
+    end
 end
 
 %It may be helpful to store the means in a substruct called means then call
@@ -273,18 +269,65 @@ i = index;
 figure(i*100)
 clf;
 labels1={'Ax1B' 'Ax23B' 'Ax4plusB'};
-labels2={'A?AAAB' 'AA?AAB' 'AAA?AB' 'AAAA?B'};
+labels2={'A?AAAB' 'AA?AAB' 'AAA?AB'};
+%labels2={'A?AAAB' 'AA?AAB' 'AAA?AB' 'AAAA?B'};
 subplot(2,1,1)
-boxplot([group_data.(group_names{i}).metrics.individual_diffAgivena1x,...
-    group_data.(group_names{i}).metrics.individual_diffAgivena23x,...
-    group_data.(group_names{i}).metrics.individual_diffAgivena4plusx],'labels',labels1)
+boxplot([group_data.(group_names{i}).metrics.individual_Ax1B,...
+    group_data.(group_names{i}).metrics.individual_Ax23B,...
+    group_data.(group_names{i}).metrics.individual_Ax47B],'labels',labels1)
 title(['Credit Assignment for: ' (group_names{i})]);
 subplot(2,1,2)
-boxplot([group_data.(group_names{i}).metrics.individual_diffAgiven_n_5,...
-    group_data.(group_names{i}).metrics.individual_diffAgiven_n_4,...
-    group_data.(group_names{i}).metrics.individual_diffAgiven_n_3,...
-    group_data.(group_names{i}).metrics.individual_diffAgiven_n_2],'labels',labels2)
+boxplot([group_data.(group_names{i}).metrics.individual_ARAAAB,...
+    group_data.(group_names{i}).metrics.individual_AARAAB,...
+    group_data.(group_names{i}).metrics.individual_AAARAB,...
+],'labels',labels2)
+% boxplot([group_data.(group_names{i}).metrics.individual_ARAAAB,...
+%     group_data.(group_names{i}).metrics.individual_AARAAB,...
+%     group_data.(group_names{i}).metrics.individual_AAARAB,...
+%     group_data.(group_names{i}).metrics.individual_AAAARB],'labels',labels2)
 
+
+
+%% Old code
+
+%     %Individual means and values
+%     group_struct.(group_names{i}).metrics.individual_means = bandit_stats(idx,3);
+%     group_struct.(group_names{i}).metrics.individual_means_pre = bandit_stats(idx,4);
+%     group_struct.(group_names{i}).metrics.individual_means_post = bandit_stats(idx,5);
+%     group_struct.(group_names{i}).metrics.individual_lose_switch_means = bandit_stats(idx,9);
+%     
+%     %Credit assignment
+%     group_struct.(group_names{i}).metrics.individual_diffAgivena1x = bandit_stats(idx,10);
+%     group_struct.(group_names{i}).metrics.individual_diffAgivena23x = bandit_stats(idx,11);
+%     group_struct.(group_names{i}).metrics.individual_diffAgivena4plusx = bandit_stats(idx,12);
+%     group_struct.(group_names{i}).metrics.individual_diffAgiven_n_5 = bandit_stats(idx,13);
+%     group_struct.(group_names{i}).metrics.individual_diffAgiven_n_4 = bandit_stats(idx,14);
+%     group_struct.(group_names{i}).metrics.individual_diffAgiven_n_3 = bandit_stats(idx,15);
+%     group_struct.(group_names{i}).metrics.individual_diffAgiven_n_2 = bandit_stats(idx,15);
+%     
+%     %Overall means by group
+%     group_struct.(group_names{i}).metrics.percent_correct_mean = mean(bandit_stats(idx,3));
+%     group_struct.(group_names{i}).metrics.percent_correct_std = std(bandit_stats(idx,3));
+%     group_struct.(group_names{i}).metrics.percent_correct_mean_pre = mean(bandit_stats(idx,4));
+%     group_struct.(group_names{i}).metrics.percent_correct_std_pre = std(bandit_stats(idx,4));
+%     group_struct.(group_names{i}).metrics.percent_correct_mean_post = mean(bandit_stats(idx,5));
+%     group_struct.(group_names{i}).metrics.percent_correct_std_post = std(bandit_stats(idx,5));
+%     
+%     %Individual Errors
+%     group_struct.(group_names{i}).metrics.individual_win_switch_error = bandit_stats(idx,6);
+%     group_struct.(group_names{i}).metrics.individual_win_switch_error_pre = bandit_stats(idx,7);
+%     group_struct.(group_names{i}).metrics.individual_win_switch_error_post = bandit_stats(idx,8);
+%     
+%     %Overall Errors by group
+%     group_struct.(group_names{i}).metrics.win_switch_mean = mean(bandit_stats(idx,6));
+%     group_struct.(group_names{i}).metrics.win_switch_std = std(bandit_stats(idx,6));
+%     group_struct.(group_names{i}).metrics.win_switch_mean_pre = mean(bandit_stats(idx,7));
+%     group_struct.(group_names{i}).metrics.win_switch_pre_std = std(bandit_stats(idx,7));
+%     group_struct.(group_names{i}).metrics.win_switch_mean_post = mean(bandit_stats(idx,8));
+%     group_struct.(group_names{i}).metrics.win_switch_post_std = std(bandit_stats(idx,8));
+%     
+%     %Lose switches by group
+%     group_struct.(group_names{i}).metrics.lose_switch_mean = mean((bandit_stats(idx,9)));
 
 
 

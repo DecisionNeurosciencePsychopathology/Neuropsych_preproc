@@ -34,7 +34,7 @@ for i = 1:length(s.id) %subject loop
 %         a(ct,ct:ct+size(choice,2)-1)=choice;
 %     end    
     
-    %% find A*B sequences; for now, will only go up to [A*7 then B];
+    % find A*B sequences; for now, will only go up to [A*7 then B];
     s=find_past_choices(s,choice,1,choice_a,'a',i);
     s=find_past_choices(s,choice,1,choice_b,'b',i);
     s=find_past_choices(s,choice,1,choice_c,'c',i);
@@ -283,7 +283,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [s, out] = calculate_forwardspread(s,i,rew,pun,choice)
 %This function will calculate a subjects "forward spread" or the subject's
-%affintity to keep choosing an option B on trial n after choosing optin B
+%affintity to keep choosing an option B on trial n after choosing option B
 %on trial n-1, and choosing option A on tials n-2 -> n-5 as a function of
 %wheter or not the subject recieved a reward on one of the n-2 ->n-5
 %trials.
@@ -296,7 +296,7 @@ seq_vectB = s.behav(1,i).credit.b4plusx;
 seq_vectC = s.behav(1,i).credit.c4plusx;
 seq_array = {seq_vectA seq_vectB seq_vectC}; 
 
-%Create a new struct vcalled sequence which contains the sequence of
+%Create a new struct called sequence which contains the sequence of
 %repeated variables, and their position of rew/punishment, i.e. aRaaax ect.
 for j = 1:length(part1)
     for o = 1:length(part1{1})-1;
@@ -388,7 +388,8 @@ for k = 1:4:length(seq_data)
     rew_tag = seq_data{k};
     pun_tag = seq_data{k+2};
     
-    %Choice vectors = aRaaaxB + aRaaaXC ect.
+    %Choice vectors = aRaaaxB + aRaaaxC ect. Where x = B and C
+    %respectively.
     choice_rew_vectA = union(s.behav(1,i).credit.seq_next_choice.(seq_data{k,1}),s.behav(1,i).credit.seq_next_choice.(seq_data{k+1,1}));
     choice_rew_vectB = union(s.behav(1,i).credit.seq_next_choice.(seq_data{k,2}),s.behav(1,i).credit.seq_next_choice.(seq_data{k+1,2}));
     choice_rew_vectC = union(s.behav(1,i).credit.seq_next_choice.(seq_data{k,3}),s.behav(1,i).credit.seq_next_choice.(seq_data{k+1,3}));
@@ -414,7 +415,7 @@ for k = 1:4:length(seq_data)
     
     %n-5 -> n-2
     %Reward
-    if isempty(choice_rew_vectA) && isempty(choice_rew_vectB) && isempty(choice_rew_vectC)
+    if isempty(rew_vectA) && isempty(rew_vectB) && isempty(rew_vectC)
         s.behav(1,i).credit.forspread.(['probOptionAgiven' rew_tag])=NaN;
     else
         s.behav(1,i).credit.forspread.(['probOptionAgiven' rew_tag])=...
@@ -423,7 +424,7 @@ for k = 1:4:length(seq_data)
     end
     
     %Punishment
-    if isempty(choice_pun_vectA) && isempty(choice_pun_vectB) && isempty(choice_pun_vectC)
+    if isempty(pun_vectA) && isempty(pun_vectB) && isempty(pun_vectC)
         s.behav(1,i).credit.forspread.(['probOptionAgiven' pun_tag])=NaN;
     else
         s.behav(1,i).credit.forspread.(['probOptionAgiven' pun_tag])=...

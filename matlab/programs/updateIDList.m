@@ -15,7 +15,7 @@ function updateIDList( varargin, spss_flag )
 %UpdateIDList <- this will check to see if the list needs updated and react
 %accordingly
 
-%UpdateIDList([],1) <- this will check to see if the list needs updated and react
+%UpdateIDList([],1)<- this will check to see if the list needs updated and react
 %accordingly, then update the spss .dat file
 
 %UpdateIDList('force',1) <- force updates list, updates spss demog .dat file

@@ -15,8 +15,15 @@ a = eprimeread(fname,'TrialProc1',{'Condition','Offer.RT','Offer.ACC','Offer'},0
 % parse offer and stake size data present in stimuli filenames
 str_parse = cellfun(@(s) sscanf(s,'%*2s_%gof%g.bmp'),a.Offer,'UniformOutput',0);
 
+%Grab dsate Ult game was administered
+filetext = fileread(fname);
+expr=('[0-9]{2}-[0-9]{2}-[0-9]{4}');
+admin_date = regexp(filetext,expr,'match','once');
+
 % start organizing
 b.id         = id;
+formatOut = 'mm/dd/yy';
+b.admin_date = datestr(datetime(admin_date,'InputFormat', 'MM-dd-yyyy'),formatOut); %Oh matlab the hoops you must jump through...
 b.RT         = a.Offer_RT;
 b.accept     = logical(a.Offer_ACC);
 b.offer_size = cellfun(@(a) a(1), str_parse);
@@ -49,6 +56,7 @@ b.rejrate.medhi    = (sum(~b.accept & b.cond.hi)./sum(b.cond.hi));
 b.rejrate.medlo    = (sum(~b.accept & b.cond.lo)./sum(b.cond.lo));
 b.rejrate.unfairhi = (sum(~b.accept & b.cond.unfairhi)./sum(b.cond.unfairhi));
 b.rejrate.unfairlo = (sum(~b.accept & b.cond.unfairlo)./sum(b.cond.unfairlo));
+b.rejrate.total    = (sum(~b.accept)/length(b.accept));
 
 % stats., etc.
 b.specs.median.RTfairhi   = median(b.RT(b.cond.fairhi));

@@ -42,12 +42,14 @@ for sub=1:length(numlist)
     
     %get behavior
     ball.id(sub)              = numlist(sub);
+    ball.beh(sub).admin_date  = s.admin_date;
     ball.beh(sub).rrfairhi    = s.rejrate.fairhi;
     ball.beh(sub).rrfairlo    = s.rejrate.fairlo;
     ball.beh(sub).rrmediumhi  = s.rejrate.medhi;
     ball.beh(sub).rrmediumlo  = s.rejrate.medlo;
     ball.beh(sub).rrunfairhi  = s.rejrate.unfairhi;
     ball.beh(sub).rrunfairlo  = s.rejrate.unfairlo;
+    ball.beh(sub).rrtotal     = s.rejrate.total;
     
     %get RTs
     ball.beh(sub).medianRTfairhi   = s.specs.median.RTfairhi;
@@ -58,7 +60,7 @@ for sub=1:length(numlist)
     ball.beh(sub).medianRTunfairlo = s.specs.median.RTunfairlo;
     
     %concatenate into data table
-    ball.data(sub,:) = [ball.id(sub), ... 
+    ball.data(sub,:) = [ball.id(sub), s.rejrate.total ... 
 		s.rejrate.fairhi,   s.rejrate.fairlo, ... 
 		s.rejrate.medhi,    s.rejrate.medlo , ...
 		s.rejrate.unfairhi, s.rejrate.unfairlo ...
@@ -75,7 +77,7 @@ save([ball_dirname '/ball'],'ball');
 
 if(spss_flag)
 
-	ball.variables={'id' 'rrfairhi' 'rrfairlo' 'rrmediumhi' 'rrmediumlo' 'rrunfairhi' 'rrunfairlo' ...
+	ball.variables={'id' 'rrtotal' 'rrfairhi' 'rrfairlo' 'rrmediumhi' 'rrmediumlo' 'rrunfairhi' 'rrunfairlo' ...
 		'medianRTfairhi' 'medianRTfairlo' 'medianRTmediumhi' 'medianRTmediumlo' 'medianRTunfairhi' ...
 		'medianRTunfairlo'};
 

@@ -5,11 +5,11 @@ function ball=bandit_rl_model(ball,params,plt)
 %Take care of initial params
 if  numel(params) < 5
     disp('Not enough parameters defaulting to generic values')
-    alpha = 0.9;
+    alpha = 0.95;
     lambda_win = 0.3;
     lambda_loss = 0.1;
     beta = 10;
-    epsilon = 0.3;
+    epsilon = 0.4;
 else
     alpha = params(1);
     lambda_win = params(2);
@@ -39,7 +39,7 @@ plot_flag =plt;
 %Load design file
 design_struct = bandit_tablet_load_design;
 
-%%
+%% Set up params
 trial_length = length(ball.behav(1,1).choice);
 vt_1=0.*ones(1,trial_length);
 vt_2=0.*ones(1,trial_length);
@@ -55,8 +55,8 @@ Pr3=zeros(1,trial_length);
 delta=zeros(1,trial_length);
 
 gamma = 0.99; % decay param for expected value when not chosen
-zeta = 0.99; %increment param for uncertainty
-
+zeta = gamma; %increment param for uncertainty
+min_u = -10; % how low uncertainty is allowed to go 
 
 %%
 %Grab subjects choices and run update equations
@@ -72,12 +72,20 @@ for i = 1:length(ball.id) %subject Loop
     lose_switch = zeros(1,trial_length)';
     subj_model_predicted = zeros(1,trial_length)';
     
+    %Init expected with init value set to 0
+    vt_1=0.*ones(1,trial_length);
+    vt_2=0.*ones(1,trial_length);
+    vt_3=0.*ones(1,trial_length);
+    
     %Init uncertainty with init value as 0
     ut_1 = zeros(1,trial_length)';
     ut_2 = zeros(1,trial_length)';
     ut_3 = zeros(1,trial_length)';
+    ut_1(1) = 1;
+    ut_2(1) = 1;
+    ut_3(1) = 1;
     
-    
+        
     %Init uncertainty with init value as 0
     uv_sum1 = zeros(1,trial_length)';
     uv_sum2 = zeros(1,trial_length)';
@@ -127,6 +135,8 @@ for i = 1:length(ball.id) %subject Loop
         Pr1=exp(beta.*(vt_1))./(exp(beta.*(vt_1))+exp(beta.*(vt_2))+ exp(beta.*(vt_3)));
         Pr2=exp(beta.*(vt_2))./(exp(beta.*(vt_1))+exp(beta.*(vt_2))+ exp(beta.*(vt_3)));
         Pr3=exp(beta.*(vt_3))./(exp(beta.*(vt_1))+exp(beta.*(vt_2))+ exp(beta.*(vt_3)));
+        
+        
         
         %determine probablistically best choice
         best_choice_Pr = find_best_choice(best_choice_empty,Pr1,Pr2,Pr3,1);
@@ -191,8 +201,8 @@ for i = 1:length(ball.id) %subject Loop
         %plot(scaled_uv_sum3, 'g')
         %plot(norm_uv_sum3, 'g')
         hold off
-          legend('stim-1', 'stim-2', 'stim-3',...
-        'Location','Best');
+        legend('stim-1', 'stim-2', 'stim-3',...
+            'Location','Best');
         title('UV sums')
         
         %plot u's
@@ -204,8 +214,8 @@ for i = 1:length(ball.id) %subject Loop
         hold on
         plot(ut_3, 'g')
         hold off
-          legend('stim-1', 'stim-2', 'stim-3',...
-        'Location','Best');
+        legend('stim-1', 'stim-2', 'stim-3',...
+            'Location','Best');
         title('Uncertainties')
     end
     
@@ -226,6 +236,34 @@ for i = 1:length(ball.id) %subject Loop
     echosen=[vt_1.*chose1'+vt_2.*chose2'+vt_3.*chose3']';
     etotal=vt_1+vt_2+vt_3;
     
+        %% Did subject actually choose the highest probable stimulus
+    smoothed_A = smooth(design_struct.Arew,20);
+    smoothed_B = smooth(design_struct.Brew,20);
+    smoothed_C = smooth(design_struct.Crew,20);
+%     prA = smoothed_A./(smoothed_A + smoothed_B +smoothed_C);
+%     prB = smoothed_B./(smoothed_A + smoothed_B +smoothed_C);
+%     prC = smoothed_C./(smoothed_A + smoothed_B +smoothed_C);
+best_choice_design = find_best_choice(best_choice_empty,smoothed_A,smoothed_B, smoothed_C,3);
+%So I made these 'codes' to account for the situations in which the
+%probability of choosing stimuli is equal
+for o = 1:length(best_choice_design)
+    if best_choice_design(o) == 997 && ismember(choice(o),[1,2])
+        correct_choice(o,1) = 1;
+    elseif best_choice_design(o) == 998 && ismember(choice(o),[2,3])
+        correct_choice(o,1) = 1;
+    elseif best_choice_design(o) == 9989 && ismember(choice(o),[1,3])
+        correct_choice(o,1) = 1;
+    elseif best_choice_design(o)==choice(o)
+        correct_choice(o,1) = 1;
+    else
+        correct_choice(o,1) = 0;
+    end
+end
+
+
+correct_choice_prereversal = sum(correct_choice(1:trial_length/2));
+correct_choice_postreversal = sum(correct_choice((trial_length/2 +1):end));
+correct_choice = sum(correct_choice);
     
     %% Save each meteric in subject's behavorial struct
     ball.behav(1,i).v_t = [vt_1' vt_2' vt_3'];
@@ -234,6 +272,11 @@ for i = 1:length(ball.id) %subject Loop
     ball.behav(1,i).lose_switch = lose_switch;
     ball.behav(1,i).echosen = echosen;
     ball.behav(1,i).subj_model_predicted = subj_model_predicted;
+    ball.behav(1,i).correct_choice = correct_choice;
+    ball.behav(1,i).correct_choice_prereversal = correct_choice_prereversal;
+    ball.behav(1,i).correct_choice_postreversal = correct_choice_postreversal;
+
+    
     
     
     %% Plot some subjects QC check
@@ -254,7 +297,8 @@ for i = 1:length(ball.id) %subject Loop
         hold on
         plot(smooth(chose1,smoothie), 'b', 'LineWidth',2);
         plot(smooth(vt_1,smoothie), 'k','LineWidth',2);
-        plot(smooth((best_choice==1),smoothie), 'g','LineWidth',2);
+        %plot(smooth((best_choice==1),smoothie), 'm','LineWidth',2);
+        plot(smooth(uv_sum1,smoothie), 'g','LineWidth',2);
         axis([0 300 0 1.1])
         title(['Arew vs EV A ' num2str(ball.id(i))]);
         subplot(3,1,2)
@@ -262,7 +306,8 @@ for i = 1:length(ball.id) %subject Loop
         hold on
         plot(smooth(chose2,smoothie), 'b', 'LineWidth',2);
         plot(smooth(vt_2,smoothie), 'k','LineWidth',2);
-        plot(smooth((best_choice==2),smoothie), 'g','LineWidth',2);
+        %plot(smooth((best_choice==2),smoothie), 'm','LineWidth',2);
+        plot(smooth(uv_sum2,smoothie), 'g','LineWidth',2);
         axis([0 300 0 1.1])
         title('Brew vs EV B');
         subplot(3,1,3)
@@ -270,7 +315,8 @@ for i = 1:length(ball.id) %subject Loop
         hold on
         plot(smooth(chose3,smoothie), 'b', 'LineWidth',2);
         plot(smooth(vt_3,smoothie), 'k','LineWidth',2);
-        plot(smooth((best_choice==3),smoothie), 'g','LineWidth',2);
+        %plot(smooth((best_choice==3),smoothie), 'm','LineWidth',2);
+        plot(smooth(uv_sum3,smoothie), 'g','LineWidth',2);
         axis([0 300 0 1.1])
         title('Crew vs EV C');
         
@@ -278,20 +324,23 @@ for i = 1:length(ball.id) %subject Loop
         
     end
     
-    
-    vt_1=0.*ones(1,trial_length);
-    vt_2=0.*ones(1,trial_length);
-    vt_3=0.*ones(1,trial_length);
-    
 end %end Subject Loop
 tmp=0;
 
 
 function best_choice=find_best_choice(best_choice,x,y,z,gr)
-if gr>0
+if gr==1
     best_choice(x> y & x> z)=1;
     best_choice(y> x & y> z)=2;
     best_choice(z> y & z> x)=3;
+elseif gr==3
+    best_choice(x> y & x> z)=1;
+    best_choice(y> x & y> z)=2;
+    best_choice(z> y & z> x)=3;
+    %Codes for the cases in which the probabilites are the same
+    best_choice(x==y & y~=0) = 997;
+    best_choice(y==z & y~=0) = 998;
+    best_choice(x==z & z~=0) = 999;
 else
     best_choice(x< y & x< z)=1;
     best_choice(y< x & y< z)=2;
@@ -305,9 +354,9 @@ a(j) = al*a(j-1) + lmb*(r(j) - a(j-1));
 b(j) = gam.*b(j-1);
 c(j) = gam.*c(j-1);
 %Uncertainty
-x(j) = gam*(x(j-1)) - (1+x(j-1));
-y(j) = zta*(y(j-1));
-z(j) = zta*(z(j-1));
+x(j) = (al)*(x(j-1));
+y(j) = (y(j-1));
+z(j) = (z(j-1));
 %PE
 dlt(j) = r(j) - a(j-1);
 return

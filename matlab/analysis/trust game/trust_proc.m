@@ -11,6 +11,10 @@ function z = trust_proc( varargin )
 %----------------------------------------------------------%
 
 
+%NEED to rewrite this as the xlsx file has changed format, ProTip grab
+%sheet name, if behave == laptop, if scanner =  scanner. Adjust code as
+%need be...
+
 % processes trust game data
 data_dir = [pathroot 'analysis/trust game/data/']; % set data path
 
@@ -18,7 +22,10 @@ data_dir = [pathroot 'analysis/trust game/data/']; % set data path
 %file = ['C:/Users/wilsonj3/Box Sync/Suicide studies/data/subject list.xlsx']; % set file path
 %5/7/15 So just update this file from box whenever you want to run this
 %script???
-file = [pwd '\subject list.xlsx']; % set file path
+%file = [pwd '\subject list.xlsx']; % set file path
+
+%Grab file directly from box
+file = ['E:\Box Sync\Suicide studies\data\subject list (olsener2@upmc.edu).xlsx'];
 
 %Found this on matlab central get sheet names, for each sheet load in data
 %to the rata data cell
@@ -30,11 +37,11 @@ ids = cell(1, m);
 tmp_ids_and_versn = cell(200,2); %This will support up to 200 subjects
 
 
-for(i=1:1:m);
+for i=1:m
     Sheet = char(sheetname(1,i)) ;
     [~,~,raw_data{i}] = xlsread(file, Sheet);
     ids{i} = cellfun(@MatchID,raw_data{i}(:,1));
-    tmp = mat2cell(ids{i}(:,1));
+    tmp = mat2cell(ids{i}(:,1),size(ids{i}(:,1),1),size(ids{i}(:,1),2));
     for j = 1:length(tmp{1}(:,1))
         raw_data{i}{j,1} = tmp{1}(j,1); %replace with Matached Ids
     end
@@ -52,7 +59,21 @@ for(i=1:1:m);
         endwin(1,i) = startwin + size(raw_data{i},1)-1;
     end
     
-    tmp_ids_and_versn(startwin:endwin(i),1:2)=raw_data{i}(:,1:2:3);
+    switch lower(Sheet)
+        case 'pilot'
+            ver = 'laptop';
+        case 'behavioral'
+            ver = 'laptop';
+        case 'scanner'
+            ver = 'scanner';
+        otherwise
+            error('Something is wrong check the excel file!')
+    end
+    
+    temp_data(:,i) = {[raw_data{i}(:,1),cellstr(repmat(ver,length(raw_data{i}(:,1)),1))]};
+
+   % tmp_ids_and_versn(startwin:endwin(i),1:2)=raw_data{i}(:,1:2:3);
+    tmp_ids_and_versn(startwin:endwin(i),1:2)=temp_data{i};
     
     %
     

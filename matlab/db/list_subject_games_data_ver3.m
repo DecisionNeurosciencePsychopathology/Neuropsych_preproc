@@ -115,7 +115,7 @@ fprintf(fid,'\\usepackage{amsmath,amssymb,latexsym,fullpage,longtable,arydshln}\
 fprintf(fid,'\n\\begin{document}\n\n');
 
 % print some info
-fprintf(fid,'Data list last updated: June 15, 2015\n\n');
+fprintf(fid,'Data list last updated: Feb 29, 2016\n\n');
 fprintf(fid,'\\LaTeX\\ file compiled on: \n\\today');
 
 % print table stuff

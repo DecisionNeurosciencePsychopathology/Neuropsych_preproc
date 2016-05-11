@@ -26,8 +26,8 @@ d = [pathroot 'analysis/' name_of_the_game '/data/raw'];
 %or ultimatum or wtw in the most recent directory in the processed folder
 %and then move all the data files?
 
-%file_list = dir([s name_of_the_game '/*.txt']); % for E-Prime files
-file_list = dir([s '/*.txt']); % for E-Prime files
+file_list = dir([s name_of_the_game '/*.txt']); % for E-Prime files
+%file_list = dir([s '/*.txt']); % for E-Prime files %This was breaking at one point, program wasn't grabbing prober files...
 if(isempty(file_list)) 
     fprintf('no ''%s'' files found\n',name_of_the_game);
     return; 
@@ -37,8 +37,8 @@ end
 id_match = match_file_to_id(file_list);
 
 % make directories and move files into them (on backup drive)
-%src_dir  = [s name_of_the_game '/']; 
-src_dir  = [s '/'];
+src_dir  = [s name_of_the_game '/']; 
+%src_dir  = [s '/'];
 dest_dir = [d '/'];
 
 % why have I removed this from the processing stream?
