@@ -26,11 +26,9 @@ load('subjIDlistDB.mat')
 %You could look into passing in the index variable from updateIDList, I
 %believe that var has all the header info you'd need to kind of map where
 %each of these variables are... just a thought.
-subjectIDlistDB.id_number = data(:,1);
-subjectIDlistDB.id_number = cell2mat(subjectIDlistDB.id_number);
-subjectIDlistDB.consent_date = data(:,4);
-subjectIDlistDB.protocol = data(:,2);
-subjectIDlistDB.initials = data(:,3);
-subjectIDlistDB.comment = data(:,9);
+subjectIDlistDB.id_number = data.ID;
+subjectIDlistDB.consent_date = data.BASELINECONSENTDATE;
+subjectIDlistDB.initials = data.INITIALS;
+subjectIDlistDB.comment = data.COMMENT;
 save subjIDlistDB.mat subjectIDlistDB
 cd(origin)
