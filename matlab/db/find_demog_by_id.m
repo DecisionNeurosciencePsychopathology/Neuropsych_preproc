@@ -8,7 +8,7 @@ function task_data = find_demog_by_id(task_data)
 
 % db = 'c:\kod\Neuropsych_preproc\SPSS\data\demogs_data.mat'
 % 
-% db = [pathroot 'db/splash_demo_2.xlsx'];
+% db = [pathroot 'db/splashDemo2.xlsx'];
 
 
 

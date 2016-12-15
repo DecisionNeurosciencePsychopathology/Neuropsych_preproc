@@ -1,4 +1,4 @@
-function q = run_bandit_analysis (varagin)
+function q = run_bandit_analysis (varargin)
 %Author: Jonathan Wilson
 %Date created: 6/30/15
 %Last Modified 7/1/15
@@ -11,13 +11,19 @@ function q = run_bandit_analysis (varagin)
 %This was just while I was debugging the code
 clc
 close all
+search_flag = false;
+if(any(strcmpi('load',varargin))), search_flag = true; end
 
 %Load  in data
 try
-    load('c:\kod\Neuropsych_preproc\matlab\analysis\bandit\data\bandit_data.mat')
+    if ~search_flag
+        load('c:\kod\Neuropsych_preproc\matlab\analysis\bandit\data\bandit_data.mat')
+    else
+        fail
+    end
 catch
     disp('Can''t find bandit data, please locate the bandit data file')
-    [FileName,PathName,FilterIndex] = ...
+    [FileName,PathName,~] = ...
         uigetfile('*.mat','Choose a file');
     load([PathName FileName]);
 end

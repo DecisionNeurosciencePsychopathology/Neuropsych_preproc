@@ -1,18 +1,28 @@
 function q = bandit_proc( varargin )
 
-% processes 3-armed bandit data on all subjects
-data_dir = [pathroot 'analysis/bandit/data/']; % set data path
+%updates to account for hallquist subjects
+%PArse out the optional arguments
+p = inputParser;
+defaultNonUPMCSubjs = false;
+addParameter(p,'nonUPMC',defaultNonUPMCSubjs,@islogical)
+parse(p,varargin{:})
 
-% create list of subjects defined by directory names
-numlist = num_scan(dir([data_dir 'raw/']));
+[data_dir, numlist,alt_ids] = whichDataPathToUse(p);
+
+
+% % processes 3-armed bandit data on all subjects
+% out_path = [pathroot 'analysis/bandit/data/']; % set data path
+% 
+% % create list of subjects defined by directory names
+% numlist = num_scan(dir([out_path 'raw/']));
 
 % % run single-subject proc script on each
 for sub=1:length(numlist)
     
-    fprintf('processing id: %6d\t\t',numlist(sub)); 
+    fprintf('processing id: %6d\t\t',numlist(sub));
 
 	% load subject's data
-    s = bandit_sub_proc(numlist(sub), varargin{:} );
+    s = bandit_sub_proc(numlist(sub), varargin{:}, data_dir );
     
     % print some general error counts info
     fprintf('error counts: PS = %3d, SS = %3d, PE = %3d\n', ...
@@ -70,6 +80,11 @@ end
 % enter descriptive field info
 % -- not done yet --
 
+%Change ids if needed
+if ~isempty(alt_ids)
+    ball.alt_ids = alt_ids;
+end
+
 % save it
 save([data_dir 'bandit_data'],'ball');
 
@@ -91,3 +106,32 @@ q_nan = isnan(num_out);
 num_out = num_out(~q_nan);
 
 return
+
+function [out_path,numlist,alt_ids]=whichDataPathToUse(p)
+
+%Default value
+alt_ids = '';
+
+%Use either default or custom data path
+if p.Results.nonUPMC==1
+    out_path=[uigetdir(pwd,'Please selcet where the bandit data is') filesep];
+    %Grab the actual ePrime files by is in .txt file
+    eprime_files=glob([out_path '\*\*.txt']);
+    expression = '-([0-9]{2,5})-';
+    numlist = cellfun(@(x) regexp(x,expression,'match'),eprime_files);
+    numlist = str2double(cellfun(@(x) x(2:end-1), numlist,'UniformOutput',0));    
+    
+    %Grab the SPECC id, or subject specific id, make the strings part of vararagin 
+    ids=glob([out_path '*_[a-z][a-z]']);
+    expression = '([0-9]{3,5}_[aA-zZ]{2})';
+    alt_ids = cellfun(@(x) regexp(x,expression,'match'),ids,'UniformOutput',0); 
+    
+else
+    
+    %processes 3-armed bandit data on all subjects
+    out_path = [pathroot 'analysis/bandit/data/']; % set data path
+    
+    %create list of subjects defined by directory names
+    numlist = num_scan(dir([out_path 'raw/']));
+    
+end

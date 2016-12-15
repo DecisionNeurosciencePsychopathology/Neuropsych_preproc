@@ -29,7 +29,8 @@ id_nums = id_nums(id_nums ~= 999999); % silly bug (not on our end)
 % pre-allocate memory
 results.id         = id_nums;
 results.bandit     = false(size(id_nums));
-results.bart       = false(size(id_nums));
+%results.bart       = false(size(id_nums)); %No longer admined
+results.ug_context = false(size(id_nums));
 results.ultimatum  = false(size(id_nums));
 results.willtowait = false(size(id_nums));
 results.trustgame  = false(size(id_nums));
@@ -40,8 +41,12 @@ results2.cantab  = false(size(id_nums));
 
 
 % bart 
-load([pathroot 'analysis/bart/data/bart_data.mat']);
-results.bart = ismember(results.id,bart_struct.id);
+% load([pathroot 'analysis/bart/data/bart_data.mat']);
+% results.bart = ismember(results.id,bart_struct.id);
+
+%ug-context
+load([pathroot 'analysis/ug_context/data/ug_context_data.mat']);
+results.ug_context = ismember(results.id,ball.id);
 
 % bandit
 load([pathroot 'analysis/bandit/data/bandit_data.mat']);
@@ -125,18 +130,22 @@ fprintf(fid,'\t\t& & & & & & \\textbf{Trust} & \\textbf{Game} \\\\\n');
 fprintf(fid,'\t\t\\textbf{Subject N\\textsuperscript{o}}\t&\t');
 fprintf(fid,'\\textbf{Initials}\t&\t');
 fprintf(fid,'\\textbf{3 Armed Bandit}\t&\t');
-fprintf(fid,'\\textbf{BART}\t&\t');
+%fprintf(fid,'\\textbf{BART}\t&\t');
+fprintf(fid,'\\textbf{UGCon}\t&\t');
 fprintf(fid,'\\textbf{Ultimatum Game}\t&\t');
 fprintf(fid,'\\textbf{Willingness to Wait}\t&\t');
 fprintf(fid,'\\text{Behav.$\\vert$}\t&\t\\text{Scanned} \\\\\n');
 fprintf(fid,'\t\t\\multicolumn{2}{c}{N = %d} \t & N = %d \t & N = %d \t & N = %d \t & N = %d \t & N = %d \\\\ \\hline\n', ...
-    numel(ids),sum(data.bandit),sum(data.bart),sum(data.ultimatum),sum(data.willtowait),sum(data.trustgame));
+    numel(ids),sum(data.bandit),sum(data.ug_context),sum(data.ultimatum),sum(data.willtowait),sum(data.trustgame));    
+    %numel(ids),sum(data.bandit),sum(data.bart),sum(data.ultimatum),sum(data.willtowait),sum(data.trustgame));
+    
 fprintf(fid,'\t\t\\endfirsthead\n\n');
 
 fprintf(fid,'\t\t\\textbf{Subject N\\textsuperscript{o}}\t&\t');
 fprintf(fid,'\\textbf{Initials}\t&\t');
 fprintf(fid,'\\textbf{3 Armed Bandit}\t&\t');
-fprintf(fid,'\\textbf{BART}\t&\t');
+%fprintf(fid,'\\textbf{BART}\t&\t');
+fprintf(fid,'\\textbf{UGCon}\t&\t');
 fprintf(fid,'\\textbf{Ultimatum Game}\t&\t');
 fprintf(fid,'\\textbf{Willingness to Wait}\t&\t');
 fprintf(fid,'\\textbf{Beahv.$\\vert$Scanned} \\\\ \\hline\n');
@@ -165,7 +174,7 @@ for ni = 1:numel(data.id)
 
 	if(0)
 	%------ NOT READY YET ------
-		task_names = fieldnames(data);
+		task_names = fieldnames(data); %#ok<UNRCH>
 
 		for n_task = 2:numel(task_fields)
 			if(data.(task_names{n_task}))
@@ -184,10 +193,16 @@ for ni = 1:numel(data.id)
         s.bandit = '';
     end
     
-    if(data.bart(ni))
-        s.bart = sprintf('\\checkmark');
+%     if(data.bart(ni))
+%         s.bart = sprintf('\\checkmark');
+%     else
+%         s.bart = '';
+%     end
+
+    if(data.ug_context(ni))
+        s.ug_context = sprintf('\\checkmark');
     else
-        s.bart = '';
+        s.ug_context = '';
     end
     
     if(data.ultimatum(ni))
@@ -205,6 +220,11 @@ for ni = 1:numel(data.id)
    %MAKE trust game preproc then come back here...
    if(data.trustgame(ni))
        ind=find(tg_struct.id==id_num);
+       
+       %WHY ARE THERE DUPS!
+       ind=min(ind);
+       
+       
         if strcmp(tg_struct.versn(ind),'scanner/laptop') || strcmp(tg_struct.versn(ind),'laptop/scanner')
             s.trust = sprintf('\\hspace{3.3mm} \\checkmark & \\checkmark');
         elseif strcmp(tg_struct.versn(ind),'laptop')
@@ -217,7 +237,8 @@ for ni = 1:numel(data.id)
    end
     
     % write line 
-    fprintf(fid,'%s\t & \t%s\t & \t%s\t & \t%s\t & \t%s  \\\\ \\hdashline[1pt/2pt]\n',s.bandit,s.bart,s.ultim,s.willin,s.trust);
+    %fprintf(fid,'%s\t & \t%s\t & \t%s\t & \t%s\t & \t%s  \\\\ \\hdashline[1pt/2pt]\n',s.bandit,s.bart,s.ultim,s.willin,s.trust);
+    fprintf(fid,'%s\t & \t%s\t & \t%s\t & \t%s\t & \t%s  \\\\ \\hdashline[1pt/2pt]\n',s.bandit,s.ug_context,s.ultim,s.willin,s.trust);
     
 end
 
@@ -236,7 +257,8 @@ for i = 1:length(data_names)
     data_for_excel(1,i) = data_names(i);
     data_for_excel(2:id_len+1,i) = num2cell(double(data.(data_names{i})(:))); %Binary seem more readable than logical
 end
-xlswrite('NP_data_for_Josh', data_for_excel);
+xlswrite('NP_data_for_Josh', data_for_excel); 
+writeUGDates
 
 
 if(0)
@@ -275,3 +297,26 @@ end
 fclose all;
 
 return
+
+function writeUGDates
+    load([pathroot 'analysis/ultimatum/data/UGsummary_data/ball.mat']);
+    [raw,~,cell_raw]=xlsread('NP_data_for_Josh');
+    for i = 1:length(raw)
+        id = raw(i,1);
+        if ismember(id,ball.id)
+            idx = ball.id==id;
+            ug_dates{i,1}=ball.beh(idx).admin_date;
+        else
+            ug_dates{i,1}='';
+        end
+    end
+    
+    %just delete the file and rerun to remove the redundant columns
+    cell_raw(1,end+1) = {'ug_dates'};
+    cell_raw(2:end,end) = ug_dates;
+    
+    
+   xlswrite('NP_data_for_Josh', cell_raw);
+
+            
+

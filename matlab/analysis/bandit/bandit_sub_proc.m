@@ -9,20 +9,28 @@ function b = bandit_sub_proc(id, varargin )
 
 % parse optional 'varargin' arguments
 fig_flag = false;
-if(strcmpi('figure',varargin)), fig_flag = true; end
+alt_data_path = false;
+if(any(strcmpi('figure',varargin))), fig_flag = true; end
 
 
 
 %  --  get the data  --  %
 get_vars = {'showstim.RESP','showstim.RT','showstim.ACC'};
-b = getData(id,get_vars);
+[b, data_out_path] = getData(id,get_vars,varargin{:});
 
 % recode chosen position numerically, counterclockwise 1=top, 2=left, 3=right
 % there are multiple versions of this task which have differing output,
 % we need to search for matches for both old and new versions of the task. 
-choice_right = strcmp(b.showstim_RESP,'right') | strcmp(b.showstim_RESP,'{RIGHTARROW}');
-choice_left  = strcmp(b.showstim_RESP,'left')  | strcmp(b.showstim_RESP,'{LEFTARROW}'); 
-choice_top   = strcmp(b.showstim_RESP,'top')   | strcmp(b.showstim_RESP,'{UPARROW}');
+% OR with SRBOX 4=left 5=top 6=right
+choice_right = strcmp(b.showstim_RESP,'right') | strcmp(b.showstim_RESP,'{RIGHTARROW}') | isequal(b.showstim_RESP,6);%b.showstim_RESP==6;
+choice_left  = strcmp(b.showstim_RESP,'left')  | strcmp(b.showstim_RESP,'{LEFTARROW}')  | isequal(b.showstim_RESP,4);%b.showstim_RESP==4;
+choice_top   = strcmp(b.showstim_RESP,'top')   | strcmp(b.showstim_RESP,'{UPARROW}')    | isequal(b.showstim_RESP,5);%b.showstim_RESP==5;
+
+if(any(strcmp('nonUPMC',varargin)))
+    choice_right = b.showstim_RESP==6;
+    choice_left  = b.showstim_RESP==4;
+    choice_top   = b.showstim_RESP==5;
+end
 
 % code responses of chosen position
 b.chosen_position = (choice_top + (2*choice_left) + (3*choice_right));
@@ -31,7 +39,8 @@ b.chosen_position = (choice_top + (2*choice_left) + (3*choice_right));
 %  --  get our design file  --  %
 % I'm pretty sure this is all in the E-prime output file as well,
 % it would be a good idea to update this in the future to just
-% pull this data from each file
+% pull this data from each file, I believe this is the same as the file
+% named crdt-sched-vrbl072911.
 load([pathroot 'db/bandit/designwithaposition.mat'], ...
     'aposition','bposition','cposition', ...
     'arew','brew','crew');
@@ -108,7 +117,10 @@ b.errors.after.perseverative = ...
 b.counts_to_first_C = countTrialsToStim(b.stim_choice(151:end),'C');
 
 % save individual file
-save(sprintf('data/%d.mat',id),'b');
+if ~exist(data_out_path,'dir')
+    mkdir(data_out_path);
+end
+save([data_out_path sprintf('/%d.mat',id)],'b');
 
 % plots if we want them
 if(fig_flag)
@@ -132,15 +144,24 @@ return
 
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-function xout = getData(id,vars)
+function [xout, fout] = getData(id,vars,varargin)
 % reads eprime data for a given bandit subject based on ID
+alt_path = false;
+if(any(strcmp('nonUPMC',varargin))), alt_path = true; end
 
-% Find the eprime file
-data_dir  = [pathroot 'analysis/bandit/data/raw/'];
-file_name = ls([data_dir sprintf('%d/*.txt',id)]);
-tmp       = sprintf('analysis/bandit/data/raw/%d/%s',id,file_name);
-fpath     = @(~) [pathroot tmp];
-
+if ~alt_path
+    % Find the eprime file
+    data_dir  = [pathroot 'analysis/bandit/data/raw/'];
+    file_name = ls([data_dir sprintf('%d/*.txt',id)]);
+    tmp       = sprintf('analysis/bandit/data/raw/%d/%s',id,file_name);
+    fpath     = @(~) [pathroot tmp];
+    fout      = 'data';
+else
+    file_path = glob([varargin{3} '*\' sprintf('*%d*.txt',id)]);
+    fpath     = @(~) file_path{:};
+    fout      = [varargin{3} 'processed_data'];
+end
+    
 % read in the data
 xout = eprimeread(fpath(),'trialproc',vars,0,-10,10); 
 
