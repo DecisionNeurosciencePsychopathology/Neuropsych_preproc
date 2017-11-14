@@ -51,7 +51,12 @@ if ~exist(fpath,'file')
     error('No master list found, see help'); % Just in case
 end
 
-hardcopy = 'Y:\Front End (For Copying)\Protect DB Front End.accdb';
+%4/18/2017 Look at access_snippet in N_pre/matlab/programs
+%Might be easier to use that and then just import or copy the xlsx into a
+%table?
+
+%hardcopy = 'Y:\Front End (For Copying)\Protect DB Front End.accdb';
+hardcopy = 'Y:\Protect 2.0.accdb'; %File name
 %Check original file's date
 org_file=dir(strcat(fpath));
 org_file=org_file.date;
@@ -67,7 +72,8 @@ if datenum(org_file)+.03<=datenum(db_file) || run_flag
     %Connect to database and export mast list
     h= actxserver('Access.Application');
     invoke(h,'OpenCurrentDatabase',hardcopy); %Protect DB
-    invoke(h.DoCmd,'RunMacro','exportDemog_noRunMacro'); %Macro is currently only executable on my (Jon's) computer
+    %invoke(h.DoCmd,'RunMacro','exportDemog_noRunMacro'); %Macro is currently only executable on my (Jon's) computer
+    invoke(h.DoCmd,'RunMacro','exportDemog'); %Macro is currently only executable on my (Jon's) computer
     h.Visible = 0;
     
     %Garbage collection
@@ -137,12 +143,12 @@ count = 0;
 if ~isempty(idx)
     
     %Find the duplicates -- if any though there should not be!
-    [C,ia,ic] = unique(id_nums);
+    [C,ia,ic] = unique(sort(id_nums));
     diff_ia = diff(ia);
     dup_idx = find(diff(ia)>1);
     reoccurance=diff_ia(find(diff(ia)>1));
     
-    if ~isempty(dup_idx) %This is a massive pain as working with cells is no bueno, but if need be you can figure it out
+    if ~isempty(dup_idx) && ~isempty(data(dup_idx,1)) %This is a massive pain as working with cells is no bueno, but if need be you can figure it out
         error('There is a duplicate! You need to fix this or talk to Josh again!')
         return
         for i = 1:length(dup_idx)

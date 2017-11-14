@@ -43,7 +43,7 @@ return
 function dout = importFromTextFile
 
 % create file pointer, main file
-file_name = ['L:\Summary Notes\Assessments&DataCollection\Computerized Tasks\Task Version Control\most recent versions\bandit\crdt-sched-vrbl072911.txt'];
+file_name = ['L:\Summary Notes\Old L-drive\Assessments&DataCollection\Computerized Tasks\Task Version Control\most recent versions\bandit\crdt-sched-vrbl072911.txt'];
 
 %create file pointer practive file
 %file_name = ['K:\studies\suicide\3ArmBandit\crdt-sched-PRACTICE.txt'];

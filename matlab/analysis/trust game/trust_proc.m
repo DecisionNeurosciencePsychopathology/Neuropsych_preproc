@@ -25,7 +25,7 @@ data_dir = [pathroot 'analysis/trust game/data/']; % set data path
 %file = [pwd '\subject list.xlsx']; % set file path
 
 %Grab file directly from box
-file = ['E:\Box Sync\Suicide studies\data\subject list (olsener2@upmc.edu).xlsx'];
+file = ['E:\Box Sync\Suicide studies\data\LEARN TG reinforcement schedules.xlsx'];
 
 %Found this on matlab central get sheet names, for each sheet load in data
 %to the rata data cell
@@ -40,6 +40,9 @@ tmp_ids_and_versn = cell(200,2); %This will support up to 200 subjects
 for i=1:m
     Sheet = char(sheetname(1,i)) ;
     [~,~,raw_data{i}] = xlsread(file, Sheet);
+    %Remove any nans
+    raw_data{i}(cellfun(@(x) any(isnan(x)),raw_data{i}(:,1)),:)=[];
+    
     ids{i} = cellfun(@MatchID,raw_data{i}(:,1));
     tmp = mat2cell(ids{i}(:,1),size(ids{i}(:,1),1),size(ids{i}(:,1),2));
     for j = 1:length(tmp{1}(:,1))
