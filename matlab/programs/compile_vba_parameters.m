@@ -3,7 +3,7 @@ function parameter_table=compile_vba_parameters(vba_data_dir)
 %into a table
 
 %Grab the data
-mat_files = glob([vba_data_dir '/*.mat']);
+mat_files = glob([vba_data_dir '.mat']);
 parameter_table = table();
 
 %Initialize empty arrays to store all parameters
