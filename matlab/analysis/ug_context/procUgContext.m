@@ -1,4 +1,4 @@
-function q = procUgContext(spss_flag,baseline_flag,create_master_df)
+function q = procUgContext(context_flag, baseline_flag, post_survey_flag, create_master_df, spss_flag)
 %Very quick and dirty script to grab all ids ug Context has been
 %administered on. Make sure to make dirs in the data folder the full
 %subject id.
@@ -19,6 +19,16 @@ if(~exist('create_master_df','var') || isempty(create_master_df))
     create_master_df = false;
 end
 
+% check argin
+if(~exist('context_flag','var') || isempty(context_flag))
+    context_flag = true;
+end
+
+% check argin
+if(~exist('post_survey_flag','var') || isempty(post_survey_flag))
+    post_survey_flag = false;
+end
+
 %% Main Code
 
 %Set up prior vars
@@ -28,13 +38,23 @@ if baseline_flag
     save_str = '/ug_context_data_baseline.mat';
     get_vars = {'Rand1.Sample','Gender','StimulusCentre','Fairness_Score','StakeImg','StakeMagnitude','OpponentMagnitude','Stimuli.OnsetTime','Stimuli.RTTime','Stimuli.RT','Stimuli.RESP'};
     endoffset=27;
-else
+elseif context_flag
     ver = 'context';
     data_dir = [pathroot 'analysis/ug_context/data/']; % set data path
     save_str = '/ug_context_data.mat';
     %TODO DNR get_vars just add to the lsit for context version
     get_vars = {'Rand1.Sample','Gender','StimulusCentre','Fairness_score','StakeImg','StakeMagnitude','OpponentMagnitude','ReappraisalText','ReappraisalDirection','PunishingType','PunishingCondition','Stimuli.OnsetTime','Stimuli.RTTime','Stimuli.RT','Stimuli.RESP'};
     endoffset=32;
+    
+    %TODO make another if statement in which you olny process surveys, will
+    %probably have to make a new function or append the funciton  "create_data_frame"
+elseif post_survey_flag
+     ver = 'post_survey';
+     data_dir = [pathroot 'analysis/ug_context/data/']; % set data path
+     save_str = '/ug_context_post_survey.mat';
+     get_vars = {'descriptions.Sample','Question','description_text','Rating','rate.RT'};
+     endoffset=19; %Or 17 dbl check this
+     
 end
 
 %Organize raw files into subject specific folders
@@ -69,16 +89,31 @@ numlist = num_scan(dir([data_dir])); %Thanks Jan!
 master_df=[]; %Initialize master dataframe
 for i = 1:length(numlist)
     ball.id(i) = numlist(i);
-    [xout, fout] = getData(ball.id(i),data_dir,get_vars,endoffset);
+    
+    %Where we want to rip the data from the txt file
+    if ~post_survey_flag
+        procedure = 'TrialProc1';
+    else
+        procedure = 'getratings';
+    end
+    
+    %Pull the data from the eprime file
+    [xout, fout] = getData(ball.id(i),data_dir,procedure,get_vars,endoffset);
     
     %Store in data in table
-    df=create_data_frame(xout,ver);
-    
-    %Save individual files as csv
-    writetable(df,[fout sprintf('%d_%s.csv',ball.id(i),ver)])
+    if ~isempty(xout)
+        df=create_data_frame(xout,ver);
+        
+        %Save individual files as csv
+        if ~isempty(df)
+            writetable(df,[fout sprintf('%d_%s.csv',ball.id(i),ver)])
+        end
+    else
+        df=[];
+    end
     
     %If we cant to compile a master dataframe
-    if create_master_df
+    if create_master_df && ~isempty(df)
         master_df=[master_df; df];
     end
 end
@@ -96,6 +131,7 @@ end
 
 return
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function num_out = num_scan(data_in)
 
 num_out = zeros(length(data_in),1);
@@ -109,7 +145,7 @@ num_out = num_out(~q_nan);
 
 return
 
-
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function m = match_file_to_id(dir_input)
 
 % function handle for extracting ID with regular expression
@@ -128,7 +164,7 @@ return
 % [b, data_out_path] = getData(id,get_vars,varargin{:});
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function [xout, fout] = getData(id,data_dir,vars,varargin)
+function [xout, fout] = getData(id,data_dir,procedure,vars,varargin)
 % reads eprime data for a given bandit subject based on ID
 %varargin{1} context or baseline?
 
@@ -142,7 +178,13 @@ fout      = [data_dir sprintf('%d/',id)];
 
 
 % read in the data
-xout = eprimeread(fpath(),'TrialProc1',vars,0,-1,varargin{1});
+try
+    xout = eprimeread(fpath(),procedure,vars,0,-1,varargin{1});
+catch
+    fprintf('eprimeread broke for subject %s!\n',num2str(id))
+    xout=[];
+    return
+end
 
 % put ID in structure and make it the first field
 xout.id = id;
@@ -152,7 +194,53 @@ return
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function dfout=create_data_frame(xin,ver)
-xin=rmfield(xin,'fname');
+%Go from eprime data in a struct to a table to save as a dataframe
+
+%Grab the date SessionDate before removing the field name for the surveys
+indata = fileread(xin.fname);
+indata = indata(1:length(indata)/10); %Shorten it up
+pattern = 'SessionDate: (\d+-\d+-\d+)';
+Session_date = regexp(indata,pattern, 'tokens');
+Session_date= Session_date{:}{:};
+
+
+xin=rmfield(xin,'fname'); %Remove file name
+
+if strcmp(ver,'baseline') || strcmp(ver,'context')
+    dfout=process_trialProc1(xin,ver); %Process main trial data
+else
+    xin.Session_date = Session_date;
+    dfout=process_getratings(xin); %Process ratings data
+end
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function dfout=process_getratings(xin)
+%Clean up naming conventions
+xin.Trial_Number = xin.descriptions_Sample;
+xin=rmfield(xin,'descriptions_Sample');
+xin.id = repmat(xin.id,length(xin.Trial_Number),1);
+xin.Session_date=repmat(xin.Session_date,length(xin.Trial_Number),1);
+xin.ReappraisalText = xin.description_text;
+xin=rmfield(xin,'description_text');
+xin.Q_type = cellfun(@(x) regexp(x,'unfair|sympathy|anger','match'),xin.Question);
+
+%Rescale the ratings
+xin.Rating = xin.Rating-2;
+
+%Reorder
+xin=reorderstructure(xin,'id','Trial_Number','Question','ReappraisalText','Rating','rate_RT','Session_date','Q_type');
+dfout = struct2table(xin);
+try
+    dfout=add_contextual_info(dfout);
+catch
+    fprintf('Subject %s did not run survey extraction successfully investigate...\n',num2str(xin.id(1)))
+    dfout=[];
+    return
+end
+
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function dfout=process_trialProc1(xin,ver)
 xin.Trial_Number = xin.Rand1_Sample;
 xin=rmfield(xin,'Rand1_Sample');
 xin.id = repmat(xin.id,length(xin.Trial_Number),1);
@@ -185,3 +273,19 @@ xin.AcceptOffer(accept_idx)=1;
 
 xin=reorderstructure(xin,'id','Trial_Number','Fairness_score','PlayerProposedAmount','OpponentProposedAmount');
 dfout = struct2table(xin);
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function xout=add_contextual_info(xin)
+%For the surveys add in the reappraisal direction and punishing type
+load('context_list.mat') %Put this on the cloud!
+
+for i = 1:height(context_list)
+    xin_idx=~cellfun(@isempty,strfind(xin.ReappraisalText,context_list.ReappraisalText{i}));
+    if any(xin_idx)
+       xin.ReappraisalDirection(xin_idx,1) = context_list.ReappraisalDirection(i);
+       xin.PunishingType(xin_idx,1) = {context_list.PunishingType{i}};
+    end
+end
+
+%Return final table
+xout = xin; 

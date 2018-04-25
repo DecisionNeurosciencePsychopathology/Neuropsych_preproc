@@ -11,7 +11,7 @@ if(~isempty(varargin))
 end
 
 
-Jpath  = 'c:/kod/matlab/'; %This is just for my personal(Jon's) comp
+Jpath  = 'c:/kod/Neuropsych_preproc/matlab/'; %This is just for my personal(Jon's) comp
 if(exist(Jpath,'dir') == 7) 
     p = Jpath;
 else 
