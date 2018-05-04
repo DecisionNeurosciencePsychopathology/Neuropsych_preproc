@@ -1,3 +1,5 @@
+%THIS function is depriciated do not use!
+
 %8/15/2014
 %Writeen by Jan Kalkus
 %Edited by Jon Wilson 
